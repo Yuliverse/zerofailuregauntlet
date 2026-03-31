@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kabza's Shop POS System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1e3a8a;
+        }
+        .receipt {
+            font-family: 'Courier New', monospace;
+        }
+        .barcode-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            body {
+                background-color: white;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <header class="mb-8 bg-white rounded-lg shadow-lg p-4 flex items-center justify-center flex-col md:flex-row md:justify-between">
+            <div class="flex items-center mb-4 md:mb-0">
+                <div class="mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60" fill="none">
+                        <rect width="60" height="60" rx="8" fill="#1e3a8a"/>
+                        <rect x="5" y="15" width="50" height="35" rx="4" fill="#ffffff"/>
+                        <rect x="10" y="20" width="10" height="25" rx="2" fill="#fbbf24"/>
+                        <rect x="25" y="20" width="10" height="25" rx="2" fill="#34d399"/>
+                        <rect x="40" y="20" width="10" height="25" rx="2" fill="#60a5fa"/>
+                        <path d="M15 10L20 15H40L45 10" stroke="#ffffff" stroke-width="2"/>
+                        <path d="M20 50H40" stroke="#1e3a8a" stroke-width="2"/>
+                        <circle cx="25" cy="55" r="2" fill="#1e3a8a"/>
+                        <circle cx="35" cy="55" r="2" fill="#1e3a8a"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Kabza's Shop</h1>
+                    <p class="text-gray-600">Point of Sale System</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-gray-600" id="current-date-time"></div>
+            </div>
+        </header>
+
+        <div class="mb-6 flex justify-center">
+            <button id="sales-mode" class="px-4 py-2 rounded-l-lg font-semibold transition bg-blue-600 text-white">Sales Mode</button>
+            <button id="inventory-mode" class="px-4 py-2 font-semibold transition bg-gray-300 text-gray-800">Inventory Mode</button>
+            <button id="view-data-mode" class="px-4 py-2 rounded-r-lg font-semibold transition bg-gray-300 text-gray-800">View Data</button>
+        </div>
+
+        <div id="main-section" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
+                <div class="mb-6">
+                    <label for="product-search" class="block text-sm font-medium text-gray-700 mb-2">Find Product</label>
+                    <div class="flex flex-col md:flex-row gap-2">
+                        <div class="flex flex-1">
+                            <input type="text" id="product-search" class="barcode-input flex-1 px-4 py-3 border border-gray-300 rounded-l-lg focus:ring-blue-500 text-lg" placeholder="Scan barcode or search by name...">
+                            <button id="add-manual" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg transition">Add</button>
+                        </div>
+                        <button id="toggle-camera" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Scan
+                        </button>
+                    </div>
+                    <div id="camera-container" class="mt-4 hidden">
+                        <video id="video" class="w-full h-64 bg-black rounded-lg"></video>
+                    </div>
+                    <div id="search-results" class="mt-2 max-h-60 overflow-y-auto hidden border border-gray-200 rounded-lg"></div>
+                </div>
+
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 id="cart-title" class="text-xl font-semibold text-gray-800">Current Cart</h2>
+                        <span id="cart-count" class="bg-blue-600 text-white px-3 py-1 rounded-full text-sm">0 items</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Product</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Price</th>
+                                    <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">Qty</th>
+                                    <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700">Total</th>
+                                    <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cart-items">
+                                <tr id="empty-cart-message">
+                                    <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                                        Cart is empty. Scan products or search to add them.
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="border-t-2 border-gray-200">
+                                    <td colspan="3" class="px-4 py-3 text-right font-semibold">Subtotal:</td>
+                                    <td id="subtotal" class="px-4 py-3 text-right font-semibold">R0.00</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button id="clear-cart" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg mr-3 transition">
+                        Clear
+                    </button>
+                    <button id="checkout-btn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition">
+                        Checkout
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div id="payment-section" class="mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Payment</h2>
+                    <div class="mb-4">
+                        <label for="total-amount" class="block text-sm font-medium text-gray-700 mb-1">Total Amount</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500">R</span>
+                            </div>
+                            <input type="text" id="total-amount" class="pl-8 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-lg font-bold" readonly>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="amount-paid" class="block text-sm font-medium text-gray-700 mb-1">Amount Paid</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500">R</span>
+                            </div>
+                            <input type="number" id="amount-paid" class="pl-8 w-full px-4 py-3 border border-gray-300 rounded-lg text-lg" placeholder="0.00">
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <label for="change" class="block text-sm font-medium text-gray-700 mb-1">Change</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500">R</span>
+                            </div>
+                            <input type="text" id="change" class="pl-8 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-lg font-bold" readonly>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 mb-4">
+                        <button class="quick-amount bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-2 rounded-lg transition" data-amount="10">R10</button>
+                        <button class="quick-amount bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-2 rounded-lg transition" data-amount="20">R20</button>
+                        <button class="quick-amount bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-2 rounded-lg transition" data-amount="50">R50</button>
+                        <button class="quick-amount bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-2 rounded-lg transition" data-amount="100">R100</button>
+                        <button class="quick-amount bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-2 rounded-lg transition" data-amount="200">R200</button>
+                        <button id="exact-amount" class="bg-green-100 hover:bg-green-200 text-green-800 px-3 py-2 rounded-lg transition">Exact</button>
+                    </div>
+                    <button id="complete-sale" class="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition text-lg font-semibold">
+                        Complete Sale
+                    </button>
+                </div>
+
+                <div id="receipt-section" class="hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-800">Receipt</h2>
+                        <div>
+                            <button id="print-receipt" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg mr-2 transition">
+                                Print
+                            </button>
+                            <button id="new-sale" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition">
+                                New Sale
+                            </button>
+                        </div>
+                    </div>
+                    <div id="receipt" class="receipt bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="data-view-section" class="mt-8 bg-white rounded-lg shadow-lg p-6 hidden">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">All Recorded Data</h2>
+            <div class="flex justify-between mb-4">
+                <div>
+                    <button id="toggle-edit" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition">Enable Edit</button>
+                    <button id="copy-csv" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition ml-2">Copy as CSV</button>
+                    <button id="add-product-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition ml-2">Add Product</button>
+                </div>
+            </div>
+            <div id="add-product-form" class="hidden bg-gray-100 p-4 rounded-lg mb-4">
+                <h3 class="text-lg font-semibold mb-4">Add New Product</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="new-name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                        <input type="text" id="new-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label for="new-barcode" class="block text-sm font-medium text-gray-700 mb-1">Barcode</label>
+                        <input type="text" id="new-barcode" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label for="new-price" class="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                        <input type="number" id="new-price" class="w-full px-4 py-2 border border-gray-300 rounded-lg" min="0" step="0.01">
+                    </div>
+                    <div>
+                        <label for="new-stock" class="block text-sm font-medium text-gray-700 mb-1">Initial Stock</label>
+                        <input type="number" id="new-stock" class="w-full px-4 py-2 border border-gray-300 rounded-lg" min="0" value="0">
+                    </div>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button id="cancel-add" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg mr-2">Cancel</button>
+                    <button id="save-new-product" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Save</button>
+                </div>
+            </div>
+            <div id="password-prompt" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-lg font-semibold mb-4">Enter Password</h3>
+                    <input type="password" id="password-input" class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4">
+                    <div class="flex justify-end">
+                        <button id="password-cancel" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg mr-2">Cancel</button>
+                        <button id="password-submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Submit</button>
+                    </div>
+                </div>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">Sales Transactions</h3>
+            <div class="overflow-x-auto mb-6">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Invoice #</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Date & Time</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Items</th>
+                            <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700">Total</th>
+                            <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sales-data"></tbody>
+                </table>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">Inventory Received</h3>
+            <div class="overflow-x-auto mb-6">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Receive ID</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Date & Time</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Items</th>
+                            <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-data"></tbody>
+                </table>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">Current Stock Levels</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Product</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Barcode</th>
+                            <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700">Price</th>
+                            <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700">Stock</th>
+                            <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stock-list"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mt-8 bg-white rounded-lg shadow-lg p-6" id="transaction-history-section">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">All Transactions</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Invoice #</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Date & Time</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Items</th>
+                            <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700">Total</th>
+                            <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transaction-history"></tbody>
+                </table>
+            </div>
+            <div class="mt-4 text-sm text-gray-500">
+                <p class="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>DEMO: Transaction data would be saved to Google Sheets every 4 hours in a production environment.</span>
+                </p>
+            </div>
+        </div>
+
+        <div id="print-template" class="hidden print-only"></div>
+
+    <script>
+        let products = [
+            { barcode: "6009695156089", name: "200ML 60 SIXO RASPBERRY CONCENTRATE", price: 13, stock: 10 },
+            { barcode: "", name: "2 ply toilet paper", price: 7, stock: 10 },
+            { barcode: "6009694635349", name: "2L KINGSLEY LITCHI", price: 11, stock: 10 },
+            { barcode: "606110447928", name: "500ML SWITCH ENERGY DRINK", price: 10, stock: 10 },
+            { barcode: "700083676818", name: "500ML SWITCH ENVY ENERGY DRINK", price: 10, stock: 10 },
+            { barcode: "700083526670", name: "500ML SWITCH ORIGINAL ENERGY DRINK", price: 10, stock: 10 },
+            { barcode: "", name: "Ace Instant Banana Porridge 1kg", price: 21, stock: 10 },
+            { barcode: "6001256003368", name: "Ace Instant Vanilla Porridge 1kg", price: 21, stock: 10 },
+            { barcode: "", name: "Ace Maixe Meal 1kg", price: 13, stock: 10 },
+            { barcode: "", name: "Ace Maize Meal 12.5kg", price: 102, stock: 10 },
+            { barcode: "", name: "Ace Maize Meal 2.5kg", price: 0, stock: 10 },
+            { barcode: "", name: "Ace Maize Meal 5kg", price: 47, stock: 10 },
+            { barcode: "", name: "Always Pads Maxi", price: 18, stock: 10 },
+            { barcode: "6001076001025", name: "aquafresh toothpaste 100ml", price: 15, stock: 10 },
+            { barcode: "6001299043468", name: "AQUARTZ MINERAL WATER 500 ML", price: 9, stock: 10 },
+            { barcode: "6009612471226", name: "aQuellÃ© Granadilla Flavoured Sparkling Water 500ml", price: 10, stock: 10 },
+            { barcode: "6009612470144", name: "aQuellÃ© Honey Melon Flavoured Sparkling Water 500ml", price: 10, stock: 10 },
+            { barcode: "6009612470175", name: "aQuellÃ© Litchi Flavoured Sparkling Water 500ml", price: 10, stock: 10 },
+            { barcode: "6009612470168", name: "AQUELLE NAARTJIE 500ML", price: 10, stock: 10 },
+            { barcode: "6001056201001", name: "Bakers Original Eet-Sum-Mor Biscuits 200 g", price: 25, stock: 10 },
+            { barcode: "6001056411004", name: "Bakers Red Label Lemon Creams 200g", price: 20, stock: 10 },
+            { barcode: "6001056412919", name: "Bakers Topper Biscuits Chocolate (1 x 125g)", price: 9, stock: 10 },
+            { barcode: "6001056412940", name: "Bakers Topper Biscuits Custard Creams (1 x 125g)", price: 9, stock: 10 },
+            { barcode: "6001056412933", name: "Bakers Topper Biscuits Vanilla (1 x 125g)", price: 9, stock: 10 },
+            { barcode: "6001056412926", name: "Bakers Topper Raspberry Flavoured Cream Biscuits 125g", price: 9, stock: 10 },
+            { barcode: "6009522305734", name: "Benny Chicken Flavoured Stock Powder 17g", price: 1.5, stock: 10 },
+            { barcode: "6009522300609", name: "Black Cat Smooth Peanut Butter 800 g", price: 63, stock: 10 },
+            { barcode: "", name: "Bokomo corn flakes 1kg", price: 52, stock: 10 },
+            { barcode: "", name: "Bonnita 500ml milk", price: 12, stock: 10 },
+            { barcode: "6009143010048", name: "BOSS 20", price: 9, stock: 10 },
+            { barcode: "6001330000146", name: "Bull Brand Corned Beef 300g", price: 25, stock: 10 },
+            { barcode: "5060466519237", name: "BURN ORIGINAL 500ML", price: 10, stock: 10 },
+            { barcode: "", name: "Cabury Lunch Bar 48g", price: 11, stock: 10 },
+            { barcode: "6001065033860", name: "Cadbury mini LUNCHBAR 23G", price: 5, stock: 10 },
+            { barcode: "4033100057885", name: "Camel Double Switch Mint Purple 20", price: 43, stock: 10 },
+            { barcode: "6001021023010", name: "Cerebos Iodated Sea Salt 500g", price: 9, stock: 10 },
+            { barcode: "", name: "Champion Maize Meal 12.5kg", price: 77, stock: 10 },
+            { barcode: "6001299025440", name: "Clover Fresh Full Cream Milk Carton 500ml", price: 14, stock: 10 },
+            { barcode: "", name: "Clover Full Cream Fresh Milk 2l", price: 35, stock: 10 },
+            { barcode: "6001299012266", name: "CLOVER GOUDA CHEESE 54 SLICES 810G", price: 2.5, stock: 10 },
+            { barcode: "6001299010309", name: "Clover Krush 100% Cranberry Fruit Juice Blend 500ml", price: 19, stock: 10 },
+            { barcode: "6001299010101", name: "Clover Krush Orange 500ml", price: 19, stock: 10 },
+            { barcode: "", name: "Clover mayonaise", price: 27, stock: 10 },
+            { barcode: "6001299025402", name: "Clover Seal Full Cream Fresh Milk 1l", price: 23, stock: 10 },
+            { barcode: "6001299028120", name: "Clover Tropika Long Life Peach & Mango Dairy Blend 200ml", price: 9, stock: 10 },
+            { barcode: "6001299007989", name: "Clover Tropika Peach Juice Blend 500ml", price: 18, stock: 10 },
+            { barcode: "", name: "Clover Ultra Milk L/Life 500ml", price: 13, stock: 10 },
+            { barcode: "", name: "Cobra Lavender floor polish 350ml", price: 38, stock: 10 },
+            { barcode: "6001335065829", name: "Craven A Menthol 20s", price: 45, stock: 10 },
+            { barcode: "6009522301262", name: "Crosse and Blackwell Tangy Mayonnaise 750 g", price: 35, stock: 10 },
+            { barcode: "6005277000108", name: "Darling Amasi Maas Bottle 2L", price: 26, stock: 10 },
+            { barcode: "", name: "Darling Ombre Braid no 1/27/35", price: 30, stock: 10 },
+            { barcode: "", name: "Darling One Million Braid no 1", price: 25, stock: 10 },
+            { barcode: "", name: "Darling One Million Braid no 27", price: 25, stock: 10 },
+            { barcode: "6002138009515", name: "Dewfresh UHT Long Life Full Cream Milk 1L", price: 18, stock: 10 },
+            { barcode: "", name: "Disprin", price: 3, stock: 10 },
+            { barcode: "", name: "Dlite 375ml Oil", price: 22, stock: 10 },
+            { barcode: "", name: "Dlite 5l Oil", price: 245, stock: 10 },
+            { barcode: "", name: "D'lite Cooking Oil 375ml", price: 19, stock: 10 },
+            { barcode: "6001206419607", name: "Dolly Varden Glycerine (1 x 250ml)", price: 34, stock: 10 },
+            { barcode: "60061348", name: "Dolly Varden Glycerine 100ml", price: 16, stock: 10 },
+            { barcode: "6001085120229", name: "domestos 750ml", price: 36, stock: 10 },
+            { barcode: "6009710721537", name: "Doritos Corn Chips Cheese Supreme (1 x 145g)", price: 20, stock: 10 },
+            { barcode: "6009710721520", name: "Doritos Sweet Chilli Flavoured Corn Chips 145g", price: 20, stock: 10 },
+            { barcode: "6009694633116", name: "Dragon - Red (500ml)", price: 10, stock: 10 },
+            { barcode: "6009694635639", name: "dragon dry lemon 500ml", price: 9, stock: 10 },
+            { barcode: "6001060177811", name: "Dunhill Courtleigh 10's", price: 28, stock: 10 },
+            { barcode: "6001060215827", name: "Dunhill Courtleigh Flat Box 20's", price: 51, stock: 10 },
+            { barcode: "", name: "Easy Wave 2pack spray", price: 18, stock: 10 },
+            { barcode: "", name: "Ebony Yaki Braid no 1", price: 10, stock: 10 },
+            { barcode: "6007512107801", name: "ECONO diapers 20 size 3", price: 57, stock: 10 },
+            { barcode: "6007512107818", name: "ECONO diapers 20 size 4", price: 57, stock: 10 },
+            { barcode: "6007512107825", name: "ECONO diapers size 5", price: 57, stock: 10 },
+            { barcode: "", name: "ECONO medium grain white rice 10kg", price: 107, stock: 10 },
+            { barcode: "", name: "Econo Rice 2kg", price: 28, stock: 10 },
+            { barcode: "", name: "Econo Sugar beans", price: 19, stock: 10 },
+            { barcode: "", name: "Econo White Sugar 2.5kg", price: 48, stock: 10 },
+            { barcode: "6001582090100", name: "EXCELLA COOKING OIL 375 ML", price: 21, stock: 10 },
+            { barcode: "6009668781362", name: "Excella Rich & Creamy Mayonnaise 750g", price: 26, stock: 10 },
+            { barcode: "6001582051095", name: "Excella Sunflower Oil (1 x 5L)", price: 241, stock: 10 },
+            { barcode: "", name: "Excella Sunflower Oil 2L", price: 95, stock: 10 },
+            { barcode: "", name: "Excella Sunflower Oil 500ml", price: 29, stock: 10 },
+            { barcode: "6001582051040", name: "EXCELLA SUNFLOWER OIL 750ML", price: 40, stock: 10 },
+            { barcode: "6009522300111", name: "Fatti's & Moni's Macaroni 500g", price: 17, stock: 10 },
+            { barcode: "6009522300098", name: "Fatti's & Moni's Spaghetti 500g", price: 17, stock: 10 },
+            { barcode: "", name: "FG Coffee 125g", price: 22, stock: 10 },
+            { barcode: "6001156230000", name: "Five Roses Teabags 10 Pack", price: 10, stock: 10 },
+            { barcode: "", name: "Five Star 1kg Fine Salt", price: 10, stock: 10 },
+            { barcode: "", name: "Five Star 500g coarse Salt", price: 5, stock: 10 },
+            { barcode: "", name: "Five Star 500g Fine Salt", price: 5, stock: 10 },
+            { barcode: "", name: "Freshpak Pure Rooibos Tagless Teabags 10 Pack", price: 10, stock: 10 },
+            { barcode: "", name: "Gentle magic Skin care mask", price: 28, stock: 10 },
+            { barcode: "", name: "Gentle Magic Soap 100g", price: 10, stock: 10 },
+            { barcode: "6009606720903", name: "glucose buscuits", price: 1, stock: 10 },
+            { barcode: "6001323106718", name: "GOLD STAR YEAST 10g", price: 5, stock: 10 },
+            { barcode: "", name: "Go-Slow BBQ", price: 5, stock: 10 },
+            { barcode: "", name: "Go-Slow Cheese", price: 5, stock: 10 },
+            { barcode: "", name: "Go-Slow Cheese/Onion", price: 5, stock: 10 },
+            { barcode: "", name: "Go-Slow Chutney", price: 5, stock: 10 },
+            { barcode: "60099983", name: "Grand-Pa Headache Powder Single Sachet", price: 2.5, stock: 10 },
+            { barcode: "6001087003193", name: "handy Andy lavender 500ml", price: 20, stock: 10 },
+            { barcode: "41287006057", name: "handy Andy lemon 750ml", price: 30, stock: 10 },
+            { barcode: "6001230012201", name: "Hercules castor oil 50ml", price: 13, stock: 10 },
+            { barcode: "", name: "Imbro 500g Samp and beans", price: 12, stock: 10 },
+            { barcode: "", name: "Inecto Dye Beach Blond 50ml", price: 32, stock: 10 },
+            { barcode: "", name: "Inecto Dye Blue Black 50ml", price: 32, stock: 10 },
+            { barcode: "", name: "Inecto Dye Passion Plum 50ml", price: 32, stock: 10 },
+            { barcode: "", name: "Inecto Dye Perfect Black 50ml", price: 32, stock: 10 },
+            { barcode: "", name: "Inecto Dye Ruby Red 50ml", price: 32, stock: 10 },
+            { barcode: "", name: "Inecto Dye Super Black 28ml", price: 20, stock: 10 },
+            { barcode: "", name: "Infacare 1 Infant Milk Formula Carton (1 x 400g)", price: 60, stock: 10 },
+            { barcode: "6009651541973", name: "Infacare 1 Infant Milk Formula Carton (1 x 400g)", price: 69, stock: 10 },
+            { barcode: "6009651541980", name: "Infacare 2 Infant Milk Formula Carton (1 x 400g)", price: 69, stock: 10 },
+            { barcode: "6009651541997", name: "Infacare 3 Infant Milk Formula Carton (1 x 400g)", price: 60, stock: 10 },
+            { barcode: "", name: "Insulation Tape 10m", price: 8, stock: 10 },
+            { barcode: "6001391000079", name: "Isibhakela Maas 2L", price: 33, stock: 10 },
+            { barcode: "", name: "Jelly Tots 41g", price: 11, stock: 10 },
+            { barcode: "6001106107031", name: "Jik 750ml", price: 23, stock: 10 },
+            { barcode: "", name: "Kellogg's Beef Flavoured Instant Noodles 5 x 70g", price: 30, stock: 10 },
+            { barcode: "6001306002389", name: "Kellogg's Beef Flavoured Instant Noodles 70g", price: 6, stock: 10 },
+            { barcode: "", name: "Kellogg's Cheese Flavoured Instant Noodles 70g", price: 6, stock: 10 },
+            { barcode: "", name: "Kellogg's Chicken Flavoured Instant Noodles 70g", price: 6, stock: 10 },
+            { barcode: "", name: "Kellogg's Durban Curry Flavoured Instant Noodles 70g", price: 6, stock: 10 },
+            { barcode: "6001503000034", name: "KING KORN 1KG MALTED SORGHUM", price: 22, stock: 10 },
+            { barcode: "6009694633147", name: "Kingsley Apple Flavoured 2L", price: 11, stock: 10 },
+            { barcode: "6009694630733", name: "Kingsley Cola 2L", price: 11, stock: 10 },
+            { barcode: "6009694631518", name: "Kingsley dry lemon 2l", price: 11, stock: 10 },
+            { barcode: "6009694630801", name: "Kingsley Ginger Beer 2LÂ ", price: 11, stock: 10 },
+            { barcode: "6009694633000", name: "KINGSLEY GRANADILLA 2L", price: 11, stock: 10 },
+            { barcode: "6009694632140", name: "KINGSLEY GRAPE 2L", price: 11, stock: 10 },
+            { barcode: "6009694630719", name: "Kingsley guava 2l", price: 11, stock: 10 },
+            { barcode: "6009694632713", name: "Kingsley Lemon Flavoured 2L", price: 11, stock: 10 },
+            { barcode: "6009694635721", name: "KINGSLEY MANGO 2l", price: 11, stock: 10 },
+            { barcode: "6009694630764", name: "Kingsley Orange 2L", price: 11, stock: 10 },
+            { barcode: "6009694630771", name: "Kingsley Pineapple 2LÂ ", price: 11, stock: 10 },
+            { barcode: "6009694630429", name: "Kingsley Tonic 2lÂ ", price: 11, stock: 10 },
+            { barcode: "6001298959999", name: "kiwi shoe polish black 50ml", price: 17, stock: 10 },
+            { barcode: "6001298959982", name: "kiwi shoe polish brown 50ml", price: 17, stock: 10 },
+            { barcode: "6001298959975", name: "kiwi shoe polish light brown", price: 17, stock: 10 },
+            { barcode: "6001038073503", name: "KNORR AROMAT CHILLI BEEF CANNISTER 75GR", price: 15, stock: 10 },
+            { barcode: "", name: "KNORR AROMAT CHILLI ORIGINAL CANNISTER 75GR", price: 15, stock: 10 },
+            { barcode: "", name: "KNORR AROMAT ORIGINAL CANNISTER 75GR", price: 15, stock: 10 },
+            { barcode: "", name: "Knorr Chakalaka 410g", price: 22, stock: 10 },
+            { barcode: "6001038002169", name: "KNORR CREAM OF CHICKEN SOUP 1X10X50G", price: 5, stock: 10 },
+            { barcode: "16001087353158", name: "KNORR CREAM OF MUSHROOM SOUP 1X10X50G", price: 5, stock: 10 },
+            { barcode: "16001087353141", name: "KNORR CREAM OF TOMATO SOUP 1X10X50G", price: 5, stock: 10 },
+            { barcode: "16001087359648", name: "KNORR MUTTON & VEGETABLE SOUP 1X10X50G", price: 5, stock: 10 },
+            { barcode: "16001087359600", name: "KNORR OXTAIL & VEGETABLE SOUP 1X10X50G", price: 5, stock: 10 },
+            { barcode: "6001038009366", name: "Knorr Packet Soup Brown Onion (10 x 50g)", price: 5, stock: 10 },
+            { barcode: "6001038002152", name: "Knorr Packet Soup Cream of Chicken 50g", price: 5, stock: 10 },
+            { barcode: "6001087353151", name: "Knorr Packet Soup Cream Of Mushroom 50g", price: 5, stock: 10 },
+            { barcode: "6001087353144", name: "KNORR PACKET SOUP CREAM OF TOMATO 50G", price: 5, stock: 10 },
+            { barcode: "6001087359634", name: "Knorr Packet Soup Curry Vegetable 50g", price: 5, stock: 10 },
+            { barcode: "6001087359641", name: "Knorr Packet Soup Mutton & Vegetable 50g", price: 5, stock: 10 },
+            { barcode: "16001087359631", name: "KNORR SOUP 10X50G CURRY VEGETABLE", price: 5, stock: 10 },
+            { barcode: "16001087359570", name: "KNORR SOUP 10X50G THICK VEGETABLE", price: 5, stock: 10 },
+            { barcode: "6001087359658", name: "Knorr Soup Beef & Onion (1 x 50g)", price: 5, stock: 10 },
+            { barcode: "16001087359655", name: "Knorr Soup Beef & Onion (10 x 50g)", price: 5, stock: 10 },
+            { barcode: "6001038009359", name: "Knorr Soup Brown Onion 50g", price: 5, stock: 10 },
+            { barcode: "6001087359627", name: "Knorr Soup Chilli Beef & Veg (1 x 50g)", price: 5, stock: 10 },
+            { barcode: "16001087359624", name: "Knorr Soup Chilli Beef & Veg (10 x 50g)", price: 5, stock: 10 },
+            { barcode: "6001087359603", name: "KNORR SOUP OXTAIL AND VEGETABLE â€“ 50G", price: 5, stock: 10 },
+            { barcode: "6001087359573", name: "Knorr Thick Vegetable Instant Soup 50g", price: 5, stock: 10 },
+            { barcode: "6001087359559", name: "Knorr Thick White Onion Instant Soup 50g", price: 5, stock: 10 },
+            { barcode: "6001038065355", name: "Knorrox Soya Mince Mutton Flavour 60g", price: 5, stock: 10 },
+            { barcode: "6009522300586", name: "KOO BAKED BEANS IN TOMATO SAUCE 410G", price: 15, stock: 10 },
+            { barcode: "", name: "Lays 36g", price: 8, stock: 10 },
+            { barcode: "", name: "Lays Salted 120g", price: 20, stock: 10 },
+            { barcode: "", name: "Lays Thai Sweet Chilli 120g", price: 20, stock: 10 },
+            { barcode: "60069795", name: "Lion Matches", price: 1, stock: 10 },
+            { barcode: "", name: "Liqui-Fruit Cranberry Fruit Juice 1l", price: 26, stock: 10 },
+            { barcode: "6001240500262", name: "Liqui-Fruit Mango Orange Fruit Juice 1l", price: 26, stock: 10 },
+            { barcode: "6001115001542", name: "Lucky Star Pilchards in Chilli Sauce (1 x 400g)", price: 27, stock: 10 },
+            { barcode: "5010821132007", name: "Lucky Star Pilchards in Hot Chilli Sauce 155 g", price: 13, stock: 10 },
+            { barcode: "5010821131000", name: "Lucky Star Pilchards in Hot Chilli Sauce 155 g", price: 13, stock: 10 },
+            { barcode: "6001115001542", name: "Lucky Star Pilchards in Hot Chilli Sauce 400 g", price: 27, stock: 10 },
+            { barcode: "", name: "Lucky Star Pilchards in Tomato Sauce (1 x 400g)", price: 27, stock: 10 },
+            { barcode: "5010821122008", name: "Lucky Star Pilchards In Tomato Sauce 155g", price: 13, stock: 10 },
+            { barcode: "5010821121001", name: "Lucky Star Pilchards In Tomato Sauce 215g", price: 17, stock: 10 },
+            { barcode: "6001115001535", name: "Lucky Star Pilchards In Tomato Sauce Tin 400g", price: 27, stock: 10 },
+            { barcode: "", name: "Mabele 500ml mague", price: 13, stock: 10 },
+            { barcode: "", name: "Mala Supreme 1kg", price: 10, stock: 10 },
+            { barcode: "6009678260543", name: "Maq Double Action Dishwashing Liquid 400 Ml", price: 18, stock: 10 },
+            { barcode: "", name: "Maq f/softner 500ml", price: 21, stock: 10 },
+            { barcode: "", name: "Maq Washing Powder 150g", price: 9, stock: 10 },
+            { barcode: "6009678261465", name: "maq Washing Powder 1kg", price: 35, stock: 10 },
+            { barcode: "6009678260031", name: "Maq Washing Powder 250g", price: 13, stock: 10 },
+            { barcode: "", name: "Maq Washing Powder 500g", price: 22, stock: 10 },
+            { barcode: "6009678261472", name: "Maq Washing Powder Flexi Regular 2kg", price: 59, stock: 10 },
+            { barcode: "6009610150932", name: "Maties Cheese Puffs 50g", price: 4, stock: 10 },
+            { barcode: "6009880485215", name: "mini snax tomato 16g", price: 0.5, stock: 10 },
+            { barcode: "6009663281003", name: "mist alba 100ml", price: 15, stock: 10 },
+            { barcode: "6009881196714", name: "MOFAYA energy drink ginger King 500ml", price: 10, stock: 10 },
+            { barcode: "6009900238814", name: "MOFAYA PREMIUM ENEGY DRINK 500ml", price: 10, stock: 10 },
+            { barcode: "", name: "Monate Mabele 10kg", price: 157, stock: 10 },
+            { barcode: "", name: "Monati Super Mabela Porridge 2kg", price: 38, stock: 10 },
+            { barcode: "6001069032555", name: "Monati Super Mabela Porridge 5kg", price: 90, stock: 10 },
+            { barcode: "6001069032579", name: "Monati Super Mabela Porridge Bag 10kg", price: 148, stock: 10 },
+            { barcode: "", name: "Monster 500ml Energy Drink", price: 20, stock: 10 },
+            { barcode: "6001624003303", name: "Montic amasi full cream 2kg", price: 31, stock: 10 },
+            { barcode: "6001624003303", name: "montic amasi full cream 500g", price: 12, stock: 10 },
+            { barcode: "", name: "Montic l/life milk 1l", price: 16, stock: 10 },
+            { barcode: "6001068323005", name: "NescafÃ© Ricoffy Instant Coffee 250g", price: 50, stock: 10 },
+            { barcode: "", name: "Nescafe Ricoffy 100g", price: 24, stock: 10 },
+            { barcode: "", name: "Nestle Cremora Coffee Creamer 125g", price: 13, stock: 10 },
+            { barcode: "42299820", name: "Nivea For Men Fresh Active Roll On 50 ml", price: 24, stock: 10 },
+            { barcode: "42299929", name: "Nivea Pearl and Beauty Roll On 50 ml", price: 26, stock: 10 },
+            { barcode: "4005808780570", name: "Nivea Rich Nourishing Body Cream 400 ml", price: 52, stock: 10 },
+            { barcode: "", name: "Nivea roll on female", price: 26, stock: 10 },
+            { barcode: "6001069020446", name: "Nola Original Mayonnaise 750g", price: 33, stock: 10 },
+            { barcode: "", name: "Ntsu Snuff Black", price: 8, stock: 10 },
+            { barcode: "", name: "Ntsu Snuff Green", price: 8, stock: 10 },
+            { barcode: "6001260000049", name: "Number 1 Banana Flavoured Mageu 1L", price: 17, stock: 10 },
+            { barcode: "6001260100046", name: "Number 1 Banana Flavoured Mageu Carton 500ml", price: 12, stock: 10 },
+            { barcode: "6001260000445", name: "Number 1 Smooth Creamy Vanilla Flavoured Mageu 1L", price: 17, stock: 10 },
+            { barcode: "6009708461971", name: "Nutriday Smooth Strawberry, Granadilla & Apricot Dairy Snack 6s", price: 3.5, stock: 10 },
+            { barcode: "6001087367943", name: "omo washing powder 250+50g", price: 13, stock: 10 },
+            { barcode: "6001087367950", name: "omo washing powder 500 + 100g", price: 25, stock: 10 },
+            { barcode: "6009208000076", name: "oozies strawberry 14g", price: 1, stock: 10 },
+            { barcode: "6001391004459", name: "Orange Grove Full Cream Long Life Milk 1L", price: 17, stock: 10 },
+            { barcode: "6009900374215", name: "Ossum Switch 20", price: 9, stock: 10 },
+            { barcode: "6001060884825", name: "PALL MALL BOOST 20s", price: 34, stock: 10 },
+            { barcode: "6001237001987", name: "PALL MALL Red 20", price: 33, stock: 10 },
+            { barcode: "", name: "Pampers Pack no 3", price: 215, stock: 10 },
+            { barcode: "", name: "Pampers Pack no 4", price: 215, stock: 10 },
+            { barcode: "", name: "Pampers Pack no 5", price: 215, stock: 10 },
+            { barcode: "", name: "Pan Cooking Oil 2l", price: 86, stock: 10 },
+            { barcode: "", name: "Pan Cooking Oil 375ml", price: 21, stock: 10 },
+            { barcode: "", name: "Pan Cooking Oil 5l", price: 237, stock: 10 },
+            { barcode: "6009695580143", name: "panado syrup 50ml", price: 33, stock: 10 },
+            { barcode: "", name: "Papa Maize Meal 12.5kg", price: 91, stock: 10 },
+            { barcode: "", name: "Papa Maize Meal 1kg", price: 0, stock: 10 },
+            { barcode: "", name: "Papa Maize Meal 2.5kg", price: 22, stock: 10 },
+            { barcode: "", name: "Papa Maize Meal 5kg", price: 42, stock: 10 },
+            { barcode: "6001237012822", name: "PETER STUYVESANT 20S KING SIZE SOFT", price: 46, stock: 10 },
+            { barcode: "", name: "Pitsana Maize Meal 12.5kg", price: 79, stock: 10 },
+            { barcode: "", name: "Powerade 500ml", price: 13, stock: 10 },
+            { barcode: "", name: "Pride Maize Meal 12.5kg", price: 92, stock: 10 },
+            { barcode: "", name: "Pride Maize Meal 1kg", price: 0, stock: 10 },
+            { barcode: "", name: "Pride Maize Meal 2.5kg", price: 0, stock: 10 },
+            { barcode: "", name: "Pride Maize Meal 5kg", price: 45, stock: 10 },
+            { barcode: "6002310005113", name: "Pride Red Speckled Beans 500g", price: 19, stock: 10 },
+            { barcode: "", name: "Pride Split Peas 500g", price: 15, stock: 10 },
+            { barcode: "", name: "Pringles Chips 100g", price: 25, stock: 10 },
+            { barcode: "60063083", name: "PURITY 1ST FOODS PEARS 80ML", price: 13, stock: 10 },
+            { barcode: "6001107145537", name: "PURITY 200mlÂ from 8 Months", price: 16, stock: 10 },
+            { barcode: "", name: "PURITY 2ND 125ML apple and yogurt", price: 15, stock: 10 },
+            { barcode: "60057457", name: "PURITY 2ND CARROTS 125ML", price: 15, stock: 10 },
+            { barcode: "", name: "Rainbow IQF Mixed portion 2kg", price: 82, stock: 10 },
+            { barcode: "6009001010593", name: "RAJAH 40X7G CURRY POWDER MILD & SPICY", price: 2.5, stock: 10 },
+            { barcode: "6001038256265", name: "Rajah Curry Powder Spice Envelopes 40X7G", price: 2.5, stock: 10 },
+            { barcode: "6001087377034", name: "Rajah Flavourful & Mild Curry Powder Envelope 7g", price: 2.5, stock: 10 },
+            { barcode: "6001038256258", name: "Rajah Hot Curry Powder Envelope 7g", price: 2.5, stock: 10 },
+            { barcode: "6009001010586", name: "Rajah Mild & Spicy Curry Powder Envelope 7g", price: 2.5, stock: 10 },
+            { barcode: "", name: "Reboost 500ml", price: 10, stock: 10 },
+            { barcode: "9002490100070", name: "Red Bull Energy Drink 250 ml", price: 20, stock: 10 },
+            { barcode: "6009658410043", name: "Remington Gold 20", price: 15, stock: 10 },
+            { barcode: "6009660562907", name: "RG Grape Edge 20", price: 23, stock: 10 },
+            { barcode: "6009660562396", name: "RG Switch Menthol Edge 20", price: 23, stock: 10 },
+            { barcode: "", name: "Rhodes Mixed Fruit Jam Can 900g", price: 30, stock: 10 },
+            { barcode: "6001038256050", name: "Robertsons Chicken Spice Envelope 7g", price: 2.5, stock: 10 },
+            { barcode: "6001038183400", name: "Robertsons Cream Of Tartar 12g", price: 4, stock: 10 },
+            { barcode: "6001038183301", name: "Robertsons Epsom Salts 14g", price: 3, stock: 10 },
+            { barcode: "6001038256203", name: "Robertsons Rajah Medium Curry Powder Envelope 7g", price: 2.5, stock: 10 },
+            { barcode: "", name: "Robertsons Tartarric Acid 12g", price: 5, stock: 10 },
+            { barcode: "16001087377031", name: "ROBS ENVEL FLAV & MILD 40 x 7g", price: 2.5, stock: 10 },
+            { barcode: "", name: "Rocky Enlargement Tablets 50s", price: 6, stock: 10 },
+            { barcode: "", name: "Romany Creams 200g", price: 32, stock: 10 },
+            { barcode: "6001237003509", name: "Rothman 20", price: 40, stock: 10 },
+            { barcode: "60016560", name: "SADIE ROLL ON 40ml", price: 11, stock: 10 },
+            { barcode: "6009660561184", name: "Savannah Blue 20", price: 17, stock: 10 },
+            { barcode: "6001345200418", name: "Selati Golden Brown Sugar Bag 2kg", price: 36, stock: 10 },
+            { barcode: "", name: "Sensation Hot Water no 27", price: 25, stock: 10 },
+            { barcode: "6009660560002", name: "Sharp Cig 20", price: 20, stock: 10 },
+            { barcode: "60097927", name: "Shield Classic Roll On 50 ml", price: 23, stock: 10 },
+            { barcode: "6001087362948", name: "Shield Men Motion Sense Dry Musk Anti-Perspirant 150ml", price: 23, stock: 10 },
+            { barcode: "6001085104540", name: "SHIELD MUSK ROLL-ON 6X50ML", price: 22, stock: 10 },
+            { barcode: "", name: "Shield Roll on men sports defence", price: 23, stock: 10 },
+            { barcode: "", name: "Shield Roll on men sprint", price: 23, stock: 10 },
+            { barcode: "6009830490023", name: "Sky Handwash Powder Regular 2kg", price: 35, stock: 10 },
+            { barcode: "6009831970555", name: "soda T", price: 11, stock: 10 },
+            { barcode: "6009831970555", name: "soda T pineapple 2l", price: 11, stock: 10 },
+            { barcode: "", name: "Soft and Free Afro Spray 350ml", price: 40, stock: 10 },
+            { barcode: "", name: "Soft and Free Oil Moist Shine Spray 350ml", price: 29, stock: 10 },
+            { barcode: "", name: "Soft and Free Styling Gel 250ml", price: 36, stock: 10 },
+            { barcode: "", name: "Spekko Long Grain Parboiled White Rice 10kg", price: 150, stock: 10 },
+            { barcode: "6003001026127", name: "Stayfree Maxi Regular Scented Sanitary Pads With Wings 10 Pack", price: 17, stock: 10 },
+            { barcode: "", name: "Stayfree Maxi Thick Pads 8's", price: 21, stock: 10 },
+            { barcode: "6001106126537", name: "sunbeam floor polish 350ml red", price: 38, stock: 10 },
+            { barcode: "6001085126696", name: "Sunlight 2 in 1 Hand Washing Powder 2 kg", price: 54, stock: 10 },
+            { barcode: "", name: "Sunlight 300g h/wash", price: 13, stock: 10 },
+            { barcode: "", name: "Sunlight 600g h/wash", price: 21, stock: 10 },
+            { barcode: "", name: "sunlight dishwashing liquid 400ml", price: 21, stock: 10 },
+            { barcode: "6001087358743", name: "sunlight dishwashing liquid 750ml", price: 32, stock: 10 },
+            { barcode: "6001085041142", name: "sunlight soap bar 125g", price: 6, stock: 10 },
+            { barcode: "6001085041210", name: "sunlight soap bar 500g", price: 15, stock: 10 },
+            { barcode: "6004493000213", name: "Sunola Cooking Oil (1 x 2L)", price: 88, stock: 10 },
+            { barcode: "6004493000510", name: "Sunola Cooking Oil 375ml", price: 22, stock: 10 },
+            { barcode: "", name: "sunshine brown sugar 10kg", price: 159, stock: 10 },
+            { barcode: "6009900124117", name: "sunshine brown sugar 1kg", price: 18, stock: 10 },
+            { barcode: "6009900124124", name: "SUNSHINE BROWN SUGAR 2KG", price: 34, stock: 10 },
+            { barcode: "6009900124148", name: "sunshine brown sugar 5kg", price: 77, stock: 10 },
+            { barcode: "6009628440001", name: "SUNSTAR COOKING OIL 375ML", price: 19, stock: 10 },
+            { barcode: "6009628440131", name: "SUNSTAR PURE COOKING OIL 2L", price: 96, stock: 10 },
+            { barcode: "6009628440049", name: "Sunstar Soya Cooking Oil. 1 x 500ml.", price: 30, stock: 10 },
+            { barcode: "", name: "Super White Maize Meal 12.5kg", price: 89, stock: 10 },
+            { barcode: "", name: "Super White Maize Meal 5kg", price: 41, stock: 10 },
+            { barcode: "", name: "Supreme Flour 12.5kg", price: 140, stock: 10 },
+            { barcode: "", name: "Supreme Flour 1kg", price: 0, stock: 10 },
+            { barcode: "", name: "Supreme Flour 2.5kg", price: 0, stock: 10 },
+            { barcode: "", name: "Supreme Flour 5kg", price: 0, stock: 10 },
+            { barcode: "6001087367301", name: "surf 500+100g", price: 19, stock: 10 },
+            { barcode: "6001087367684", name: "surf Washing Powder 250+50g", price: 13, stock: 10 },
+            { barcode: "6001085126719", name: "Surf Washing Powder 2kg", price: 48, stock: 10 },
+            { barcode: "6009905246203", name: "SWITCH 500ML, TUTTI FRUITTI & LIME", price: 10, stock: 10 },
+            { barcode: "", name: "Tastic Rice 10 kg", price: 150, stock: 10 },
+            { barcode: "", name: "Taxi Snuff", price: 9, stock: 10 },
+            { barcode: "", name: "Trekker Coffee 125g", price: 18, stock: 10 },
+            { barcode: "6007013000380", name: "trust 3 condoms", price: 10, stock: 10 },
+            { barcode: "60014399", name: "VASELINE BLUE SEAL 50 ML", price: 13, stock: 10 },
+            { barcode: "6001087005661", name: "Vaseline Blue Seal Original Petroleum Jelly 250 ml", price: 33, stock: 10 },
+            { barcode: "6001085120946", name: "Vaseline Blue Seal Original Pure Petroleum Jelly 100ml", price: 17, stock: 10 },
+            { barcode: "6001087012034", name: "Vaseline Men Even Tone Repairing Moisture Body Lotion 400ml", price: 50, stock: 10 },
+            { barcode: "8006540339244", name: "Vicks Patent Medicine Wet+Dry (1)", price: 35, stock: 10 },
+            { barcode: "61600416", name: "VICKS Vaporub - 10g", price: 12, stock: 10 },
+            { barcode: "8006540339244", name: "vics acta plus wet N dry 50ml", price: 35, stock: 10 },
+            { barcode: "", name: "White Star Maize Meal 12.5kg", price: 100, stock: 10 },
+            { barcode: "", name: "White Star Maize Meal 1kg", price: 0, stock: 10 },
+            { barcode: "", name: "White Star Maize Meal 2.5kg", price: 0, stock: 10 },
+            { barcode: "", name: "White Star Maize Meal 5kg", price: 50, stock: 10 },
+            { barcode: "6001285003629", name: "Wild Island Tropical Punch Concentrated Dairy Blend 1L", price: 17, stock: 10 },
+            { barcode: "", name: "Wood Perpermint cure 50ml", price: 30, stock: 10 },
+            { barcode: "", name: "Teaspoon Tips Tea 100's", price: 21, stock: 10 },
+            { barcode: "", name: "Tropica 2l", price: 36, stock: 10 },
+            { barcode: "", name: "Clover Yogurt 100g", price: 3.5, stock: 10 },
+            { barcode: "", name: "Mageu no1 500ml", price: 14, stock: 10 },
+            { barcode: "", name: "Mageu no1 1l", price: 19, stock: 10 },
+            { barcode: "6003326014526", name: "Corona 355ml", price: 83, stock: 10 }
+        ];
+
+        let cart = [];
+        let transactions = [];
+        let inventoryReceived = [];
+        let lastInvoiceNumber = 1000;
+        let lastReceiveId = 1000;
+        let codeReader = null;
+        let mode = 'sales'; // 'sales', 'inventory', or 'view-data'
+        let isEditing = false;
+        const ADMIN_PASSWORD = 'Kobe';
+
+        const productSearchInput = document.getElementById('product-search');
+        const searchResultsContainer = document.getElementById('search-results');
+        const addManualBtn = document.getElementById('add-manual');
+        const cartItemsContainer = document.getElementById('cart-items');
+        const emptyCartMessage = document.getElementById('empty-cart-message');
+        const cartCountElement = document.getElementById('cart-count');
+        const subtotalElement = document.getElementById('subtotal');
+        const clearCartBtn = document.getElementById('clear-cart');
+        const checkoutBtn = document.getElementById('checkout-btn');
+        const totalAmountInput = document.getElementById('total-amount');
+        const amountPaidInput = document.getElementById('amount-paid');
+        const changeInput = document.getElementById('change');
+        const quickAmountBtns = document.querySelectorAll('.quick-amount');
+        const exactAmountBtn = document.getElementById('exact-amount');
+        const completeSaleBtn = document.getElementById('complete-sale');
+        const paymentSection = document.getElementById('payment-section');
+        const receiptSection = document.getElementById('receipt-section');
+        const receiptContainer = document.getElementById('receipt');
+        const printReceiptBtn = document.getElementById('print-receipt');
+        const newSaleBtn = document.getElementById('new-sale');
+        const transactionHistoryContainer = document.getElementById('transaction-history');
+        const printTemplate = document.getElementById('print-template');
+        const toggleCameraBtn = document.getElementById('toggle-camera');
+        const cameraContainer = document.getElementById('camera-container');
+        const videoElement = document.getElementById('video');
+        const currentDateTimeElement = document.getElementById('current-date-time');
+        const salesModeBtn = document.getElementById('sales-mode');
+        const inventoryModeBtn = document.getElementById('inventory-mode');
+        const viewDataModeBtn = document.getElementById('view-data-mode');
+        const cartTitle = document.getElementById('cart-title');
+        const stockList = document.getElementById('stock-list');
+        const mainSection = document.getElementById('main-section');
+        const dataViewSection = document.getElementById('data-view-section');
+        const transactionHistorySection = document.getElementById('transaction-history-section');
+        const salesDataContainer = document.getElementById('sales-data');
+        const inventoryDataContainer = document.getElementById('inventory-data');
+        const toggleEditBtn = document.getElementById('toggle-edit');
+        const copyCsvBtn = document.getElementById('copy-csv');
+        const passwordPrompt = document.getElementById('password-prompt');
+        const passwordInput = document.getElementById('password-input');
+        const passwordSubmit = document.getElementById('password-submit');
+        const passwordCancel = document.getElementById('password-cancel');
+        const addProductBtn = document.getElementById('add-product-btn');
+        const addProductForm = document.getElementById('add-product-form');
+        const cancelAdd = document.getElementById('cancel-add');
+        const saveNewProduct = document.getElementById('save-new-product');
+        const newName = document.getElementById('new-name');
+        const newBarcode = document.getElementById('new-barcode');
+        const newPrice = document.getElementById('new-price');
+        const newStock = document.getElementById('new-stock');
+
+        function initPOS() {
+            loadProducts();
+            loadTransactions();
+            loadInventoryReceived();
+            updateCartUI();
+            renderTransactionHistory();
+            renderDataView();
+            updateDateTime();
+            setInterval(updateDateTime, 60000);
+            updateModeUI();
+            productSearchInput.focus();
+        }
+
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            currentDateTimeElement.textContent = now.toLocaleDateString('en-ZA', options);
+        }
+
+        function loadProducts() {
+            const savedProducts = localStorage.getItem('products');
+            if (savedProducts) {
+                products = JSON.parse(savedProducts);
+            }
+        }
+
+        function saveProducts() {
+            localStorage.setItem('products', JSON.stringify(products));
+        }
+
+        function loadTransactions() {
+            const savedTransactions = localStorage.getItem('posTransactions');
+            if (savedTransactions) {
+                transactions = JSON.parse(savedTransactions);
+                transactions.forEach(transaction => {
+                    const invoiceNum = parseInt(transaction.invoiceNumber.replace('INV-', ''));
+                    if (invoiceNum > lastInvoiceNumber) {
+                        lastInvoiceNumber = invoiceNum;
+                    }
+                });
+            }
+        }
+
+        function saveTransactions() {
+            localStorage.setItem('posTransactions', JSON.stringify(transactions));
+        }
+
+        function loadInventoryReceived() {
+            const savedInventory = localStorage.getItem('inventoryReceived');
+            if (savedInventory) {
+                inventoryReceived = JSON.parse(savedInventory);
+                inventoryReceived.forEach(record => {
+                    const receiveNum = parseInt(record.receiveId.replace('REC-', ''));
+                    if (receiveNum > lastReceiveId) {
+                        lastReceiveId = receiveNum;
+                    }
+                });
+            }
+        }
+
+        function saveInventoryReceived() {
+            localStorage.setItem('inventoryReceived', JSON.stringify(inventoryReceived));
+        }
+
+        function renderStockList() {
+            stockList.innerHTML = '';
+            products.forEach(product => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-4 py-3 text-sm">${product.name}</td>
+                    <td class="px-4 py-3 text-sm">${product.barcode}</td>
+                    <td class="px-4 py-3 text-sm text-right price-cell" data-barcode="${product.barcode}">R${product.price.toFixed(2)}</td>
+                    <td class="px-4 py-3 text-sm text-right stock-quantity" data-barcode="${product.barcode}">${product.stock}</td>
+                    <td class="px-4 py-3 text-right">
+                        ${isEditing ? `
+                            <input type="number" class="edit-price w-20 px-2 py-1 border rounded" data-barcode="${product.barcode}" value="${product.price}" min="0" step="0.01">
+                            <input type="number" class="edit-stock w-20 px-2 py-1 border rounded" data-barcode="${product.barcode}" value="${product.stock}" min="0">
+                            <button class="save-changes bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs" data-barcode="${product.barcode}">Save</button>
+                        ` : ''}
+                    </td>
+                `;
+                stockList.appendChild(row);
+            });
+            if (isEditing) {
+                document.querySelectorAll('.save-changes').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const barcode = this.dataset.barcode;
+                        const priceInput = document.querySelector(`.edit-price[data-barcode="${barcode}"]`);
+                        const stockInput = document.querySelector(`.edit-stock[data-barcode="${barcode}"]`);
+                        const newPrice = parseFloat(priceInput.value);
+                        const newStock = parseInt(stockInput.value);
+                        if (!isNaN(newPrice) && newPrice >= 0 && !isNaN(newStock) && newStock >= 0) {
+                            const product = products.find(p => p.barcode === barcode);
+                            product.price = newPrice;
+                            product.stock = newStock;
+                            saveProducts();
+                            const priceCell = document.querySelector(`.price-cell[data-barcode="${barcode}"]`);
+                            priceCell.textContent = `R${newPrice.toFixed(2)}`;
+                            const quantitySpan = document.querySelector(`.stock-quantity[data-barcode="${barcode}"]`);
+                            quantitySpan.textContent = newStock;
+                        } else {
+                            alert('Please enter valid non-negative numbers.');
+                        }
+                    });
+                });
+            }
+        }
+
+        function updateModeUI() {
+            salesModeBtn.classList.toggle('bg-blue-600', mode === 'sales');
+            salesModeBtn.classList.toggle('text-white', mode === 'sales');
+            salesModeBtn.classList.toggle('bg-gray-300', mode !== 'sales');
+            salesModeBtn.classList.toggle('text-gray-800', mode !== 'sales');
+
+            inventoryModeBtn.classList.toggle('bg-blue-600', mode === 'inventory');
+            inventoryModeBtn.classList.toggle('text-white', mode === 'inventory');
+            inventoryModeBtn.classList.toggle('bg-gray-300', mode !== 'inventory');
+            inventoryModeBtn.classList.toggle('text-gray-800', mode !== 'inventory');
+
+            viewDataModeBtn.classList.toggle('bg-blue-600', mode === 'view-data');
+            viewDataModeBtn.classList.toggle('text-white', mode === 'view-data');
+            viewDataModeBtn.classList.toggle('bg-gray-300', mode !== 'view-data');
+            viewDataModeBtn.classList.toggle('text-gray-800', mode !== 'view-data');
+
+            cartTitle.textContent = mode === 'inventory' ? 'Items to Receive' : 'Current Cart';
+            checkoutBtn.textContent = mode === 'inventory' ? 'Receive Stock' : 'Checkout';
+
+            mainSection.classList.toggle('hidden', mode === 'view-data');
+            dataViewSection.classList.toggle('hidden', mode !== 'view-data');
+            transactionHistorySection.classList.toggle('hidden', mode === 'view-data');
+        }
+
+        salesModeBtn.addEventListener('click', () => {
+            mode = 'sales';
+            updateModeUI();
+            updateCartUI();
+            productSearchInput.focus();
+        });
+
+        inventoryModeBtn.addEventListener('click', () => {
+            mode = 'inventory';
+            updateModeUI();
+            updateCartUI();
+            productSearchInput.focus();
+        });
+
+        viewDataModeBtn.addEventListener('click', () => {
+            mode = 'view-data';
+            updateModeUI();
+            renderDataView();
+        });
+
+        productSearchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            if (query.length === 0) {
+                searchResultsContainer.classList.add('hidden');
+                return;
+            }
+            const results = products.filter(p => p.name.toLowerCase().includes(query) || p.barcode.includes(query));
+            searchResultsContainer.innerHTML = '';
+            if (results.length === 0) {
+                searchResultsContainer.classList.add('hidden');
+                return;
+            }
+            results.forEach(product => {
+                const div = document.createElement('div');
+                div.className = 'p-3 border-b border-gray-100 hover:bg-blue-50 cursor-pointer flex justify-between items-center';
+                div.innerHTML = `
+                    <div>
+                        <div class="font-medium">${product.name}</div>
+                        <div class="text-sm text-gray-500">${product.barcode}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-medium">R${product.price.toFixed(2)}</div>
+                        <div class="text-sm text-gray-500">Stock: ${product.stock}</div>
+                    </div>
+                `;
+                div.addEventListener('click', () => {
+                    addProductByBarcode(product.barcode);
+                    productSearchInput.value = '';
+                    searchResultsContainer.classList.add('hidden');
+                    productSearchInput.focus();
+                });
+                searchResultsContainer.appendChild(div);
+            });
+            searchResultsContainer.classList.remove('hidden');
+        });
+
+        productSearchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const query = this.value.trim();
+                if (query) {
+                    const product = products.find(p => p.barcode === query || p.name.toLowerCase() === query.toLowerCase());
+                    if (product) {
+                        addProductByBarcode(product.barcode);
+                        this.value = '';
+                        searchResultsContainer.classList.add('hidden');
+                    } else {
+                        alert('Product not found!');
+                    }
+                }
+            }
+        });
+
+        addManualBtn.addEventListener('click', function() {
+            const query = productSearchInput.value.trim();
+            if (query) {
+                const product = products.find(p => p.barcode === query || p.name.toLowerCase() === query.toLowerCase());
+                if (product) {
+                    addProductByBarcode(product.barcode);
+                    productSearchInput.value = '';
+                    searchResultsContainer.classList.add('hidden');
+                } else {
+                    alert('Product not found!');
+                }
+            }
+        });
+
+        toggleCameraBtn.addEventListener('click', async function() {
+            if (cameraContainer.classList.contains('hidden')) {
+                cameraContainer.classList.remove('hidden');
+                this.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Stop
+                `;
+                this.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                this.classList.add('bg-red-600', 'hover:bg-red-700');
+                codeReader = new ZXing.BrowserMultiFormatReader();
+                try {
+                    await codeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
+                        if (result) {
+                            addProductByBarcode(result.text);
+                            productSearchInput.value = result.text;
+                            stopCamera();
+                            cameraContainer.classList.add('hidden');
+                            toggleCameraBtn.innerHTML = `
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                Scan
+                            `;
+                            this.classList.remove('bg-red-600', 'hover:bg-red-700');
+                            this.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                        }
+                        if (err && !(err instanceof ZXing.NotFoundException)) {
+                            console.error(err);
+                        }
+                    });
+                } catch (err) {
+                    console.error("Error accessing camera:", err);
+                    alert("Could not access the camera. Please check permissions.");
+                    cameraContainer.classList.add('hidden');
+                    toggleCameraBtn.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Scan
+                    `;
+                    toggleCameraBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+                    toggleCameraBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                }
+            } else {
+                stopCamera();
+                cameraContainer.classList.add('hidden');
+                this.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Scan
+                `;
+                this.classList.remove('bg-red-600', 'hover:bg-red-700');
+                this.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            }
+        });
+
+        function stopCamera() {
+            if (codeReader) {
+                codeReader.reset();
+                codeReader = null;
+            }
+        }
+
+        function addProductByBarcode(barcode) {
+            if (mode === 'view-data') return;
+            const product = products.find(p => p.barcode === barcode);
+            if (product) {
+                const existingItem = cart.find(item => item.barcode === barcode);
+                const addQty = 1;
+                if (mode === 'sales') {
+                    const currentQty = existingItem ? existingItem.quantity : 0;
+                    if (currentQty + addQty > product.stock) {
+                        alert(`Insufficient stock for ${product.name}. Available: ${product.stock}`);
+                        return;
+                    }
+                }
+                if (existingItem) {
+                    existingItem.quantity += addQty;
+                    existingItem.total = existingItem.quantity * existingItem.price;
+                } else {
+                    cart.push({
+                        barcode: product.barcode,
+                        name: product.name,
+                        price: product.price,
+                        quantity: addQty,
+                        total: product.price * addQty
+                    });
+                }
+                updateCartUI();
+                setTimeout(() => {
+                    const itemRow = document.querySelector(`[data-barcode="${barcode}"]`);
+                    if (itemRow) {
+                        itemRow.classList.add('bg-green-100');
+                        setTimeout(() => itemRow.classList.remove('bg-green-100'), 500);
+                    }
+                }, 100);
+            } else {
+                alert(`Product with barcode ${barcode} not found!`);
+            }
+        }
+
+        function updateCartUI() {
+            if (mode === 'view-data') return;
+            if (cart.length === 0) {
+                emptyCartMessage.classList.remove('hidden');
+                cartCountElement.textContent = '0 items';
+                subtotalElement.textContent = 'R0.00';
+                totalAmountInput.value = '0.00';
+                return;
+            }
+            emptyCartMessage.classList.add('hidden');
+            const existingItems = document.querySelectorAll('.cart-item');
+            existingItems.forEach(item => item.remove());
+            let subtotal = 0;
+            cart.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.className = 'cart-item border-t border-gray-100';
+                row.dataset.barcode = item.barcode;
+                row.innerHTML = `
+                    <td class="px-4 py-3 text-sm">
+                        <div class="font-medium">${item.name}</div>
+                        <div class="text-xs text-gray-500">${item.barcode}</div>
+                    </td>
+                    <td class="px-4 py-3 text-sm">R${item.price.toFixed(2)}</td>
+                    <td class="px-4 py-3 text-center">
+                        <div class="flex items-center justify-center">
+                            <button class="quantity-btn decrease px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded-l" data-index="${index}">-</button>
+                            <span class="px-3 py-1 bg-gray-100">${item.quantity}</span>
+                            <button class="quantity-btn increase px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded-r" data-index="${index}">+</button>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-right">R${item.total.toFixed(2)}</td>
+                    <td class="px-4 py-3 text-right">
+                        <button class="remove-item text-red-600 hover:text-red-800" data-index="${index}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </td>
+                `;
+                cartItemsContainer.insertBefore(row, cartItemsContainer.querySelector('tfoot'));
+                subtotal += item.total;
+            });
+            cartCountElement.textContent = `${cart.length} item${cart.length !== 1 ? 's' : ''}`;
+            subtotalElement.textContent = `R${subtotal.toFixed(2)}`;
+            totalAmountInput.value = subtotal.toFixed(2);
+            document.querySelectorAll('.quantity-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.dataset.index);
+                    const product = products.find(p => p.barcode === cart[index].barcode);
+                    const isIncrease = this.classList.contains('increase');
+                    const change = isIncrease ? 1 : -1;
+                    if (mode === 'sales' && isIncrease && cart[index].quantity + 1 > product.stock) {
+                        alert(`Insufficient stock for ${product.name}. Available: ${product.stock}`);
+                        return;
+                    }
+                    cart[index].quantity += change;
+                    if (cart[index].quantity < 1) {
+                        cart.splice(index, 1);
+                    } else {
+                        cart[index].total = cart[index].quantity * cart[index].price;
+                    }
+                    updateCartUI();
+                    productSearchInput.focus();
+                });
+            });
+            document.querySelectorAll('.remove-item').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.dataset.index);
+                    cart.splice(index, 1);
+                    updateCartUI();
+                    productSearchInput.focus();
+                });
+            });
+        }
+
+        clearCartBtn.addEventListener('click', function() {
+            if (mode === 'view-data') return;
+            if (cart.length > 0) {
+                if (confirm('Are you sure you want to clear?')) {
+                    cart = [];
+                    updateCartUI();
+                    productSearchInput.focus();
+                }
+            }
+        });
+
+        checkoutBtn.addEventListener('click', function() {
+            if (mode === 'view-data') return;
+            if (cart.length === 0) {
+                alert('Empty. Please add items.');
+                return;
+            }
+            if (mode === 'sales') {
+                const canCheckout = cart.every(item => {
+                    const product = products.find(p => p.barcode === item.barcode);
+                    return item.quantity <= product.stock;
+                });
+                if (!canCheckout) {
+                    alert('Insufficient stock for some items.');
+                    return;
+                }
+                const total = cart.reduce((sum, item) => sum + item.total, 0);
+                totalAmountInput.value = total.toFixed(2);
+                amountPaidInput.value = '';
+                changeInput.value = '';
+                amountPaidInput.focus();
+            } else {
+                completeInventoryReceive();
+            }
+        });
+
+        quickAmountBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (mode === 'view-data') return;
+                const amount = parseFloat(this.dataset.amount);
+                amountPaidInput.value = amount;
+                calculateChange();
+            });
+        });
+
+        exactAmountBtn.addEventListener('click', function() {
+            if (mode === 'view-data') return;
+            const total = parseFloat(totalAmountInput.value);
+            amountPaidInput.value = total;
+            calculateChange();
+        });
+
+        amountPaidInput.addEventListener('input', calculateChange);
+
+        function calculateChange() {
+            if (mode === 'view-data') return;
+            const total = parseFloat(totalAmountInput.value) || 0;
+            const paid = parseFloat(amountPaidInput.value) || 0;
+            const change = paid - total;
+            changeInput.value = change >= 0 ? change.toFixed(2) : '0.00';
+            completeSaleBtn.disabled = paid < total;
+            completeSaleBtn.classList.toggle('opacity-50', paid < total);
+        }
+
+        completeSaleBtn.addEventListener('click', function() {
+            if (mode === 'view-data') return;
+            if (mode === 'sales') {
+                const total = parseFloat(totalAmountInput.value);
+                const paid = parseFloat(amountPaidInput.value);
+                if (isNaN(paid) || paid < total) {
+                    alert('Please enter a valid payment amount that covers the total.');
+                    amountPaidInput.focus();
+                    return;
+                }
+                const canComplete = cart.every(item => {
+                    const product = products.find(p => p.barcode === item.barcode);
+                    return item.quantity <= product.stock;
+                });
+                if (!canComplete) {
+                    alert('Insufficient stock for some items.');
+                    return;
+                }
+                cart.forEach(item => {
+                    const product = products.find(p => p.barcode === item.barcode);
+                    product.stock -= item.quantity;
+                });
+                saveProducts();
+                const invoiceNumber = generateInvoiceNumber();
+                const timestamp = new Date();
+                const transaction = {
+                    invoiceNumber,
+                    timestamp,
+                    items: [...cart],
+                    total,
+                    amountPaid: paid,
+                    change: paid - total
+                };
+                transactions.push(transaction);
+                saveTransactions();
+                generateReceipt(transaction);
+                paymentSection.classList.add('hidden');
+                receiptSection.classList.remove('hidden');
+                renderTransactionHistory();
+                renderDataView();
+            } else {
+                completeInventoryReceive();
+            }
+        });
+
+        function completeInventoryReceive() {
+            const receiveId = generateReceiveId();
+            const timestamp = new Date();
+            const inventoryRecord = {
+                receiveId,
+                timestamp,
+                items: [...cart]
+            };
+            inventoryReceived.push(inventoryRecord);
+            cart.forEach(item => {
+                const product = products.find(p => p.barcode === item.barcode);
+                product.stock += item.quantity;
+            });
+            saveProducts();
+            saveInventoryReceived();
+            renderStockList();
+            renderDataView();
+            alert('Stock updated successfully!');
+            cart = [];
+            updateCartUI();
+            productSearchInput.focus();
+        }
+
+        function generateInvoiceNumber() {
+            lastInvoiceNumber++;
+            return `INV-${lastInvoiceNumber}`;
+        }
+
+        function generateReceiveId() {
+            lastReceiveId++;
+            return `REC-${lastReceiveId}`;
+        }
+
+        function generateReceipt(transaction) {
+            const date = new Date(transaction.timestamp);
+            const dateString = date.toLocaleDateString('en-ZA');
+            const timeString = date.toLocaleTimeString('en-ZA');
+            let receiptHTML = `
+                <div class="text-center mb-4">
+                    <h3 class="font-bold text-lg">KABZA'S SHOP</h3>
+                    <p class="text-sm">123 Shop Street, City</p>
+                    <p class="text-sm">Tel: 011-123-4567</p>
+                </div>
+                <div class="flex justify-between text-sm mb-2">
+                    <span>Invoice #: ${transaction.invoiceNumber}</span>
+                    <span>${dateString} ${timeString}</span>
+                </div>
+                <div class="border-t border-b border-gray-300 py-2 mb-2">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th class="text-left">Item</th>
+                                <th class="text-right">Qty</th>
+                                <th class="text-right">Price</th>
+                                <th class="text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            transaction.items.forEach(item => {
+                receiptHTML += `
+                    <tr>
+                        <td class="text-left">${item.name}</td>
+                        <td class="text-right">${item.quantity}</td>
+                        <td class="text-right">R${item.price.toFixed(2)}</td>
+                        <td class="text-right">R${item.total.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            receiptHTML += `
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mb-4">
+                    <div class="flex justify-between">
+                        <span class="font-bold">Total:</span>
+                        <span class="font-bold">R${transaction.total.toFixed(2)}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Amount Paid:</span>
+                        <span>R${transaction.amountPaid.toFixed(2)}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Change:</span>
+                        <span>R${transaction.change.toFixed(2)}</span>
+                    </div>
+                </div>
+                <div class="text-center text-sm">
+                    <p>Thank you for shopping with us!</p>
+                    <p>Please come again</p>
+                </div>
+            `;
+            receiptContainer.innerHTML = receiptHTML;
+        }
+
+        printReceiptBtn.addEventListener('click', function() {
+            const receiptContent = receiptContainer.innerHTML;
+            printTemplate.innerHTML = receiptContent;
+            window.print();
+        });
+
+        newSaleBtn.addEventListener('click', function() {
+            cart = [];
+            updateCartUI();
+            paymentSection.classList.remove('hidden');
+            receiptSection.classList.add('hidden');
+            productSearchInput.focus();
+        });
+
+        function renderTransactionHistory() {
+            transactionHistoryContainer.innerHTML = '';
+            if (transactions.length === 0) {
+                transactionHistoryContainer.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                            No transactions yet.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            const sortedTransactions = [...transactions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            sortedTransactions.forEach(transaction => {
+                const date = new Date(transaction.timestamp);
+                const dateString = date.toLocaleDateString('en-ZA');
+                const timeString = date.toLocaleTimeString('en-ZA');
+                const row = document.createElement('tr');
+                row.className = 'border-t border-gray-100';
+                row.innerHTML = `
+                    <td class="px-4 py-3 text-sm font-medium">${transaction.invoiceNumber}</td>
+                    <td class="px-4 py-3 text-sm">${dateString} ${timeString}</td>
+                    <td class="px-4 py-3 text-sm">${transaction.items.length} item(s)</td>
+                    <td class="px-4 py-3 text-sm text-right">R${transaction.total.toFixed(2)}</td>
+                    <td class="px-4 py-3 text-right">
+                        <button class="view-transaction bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded text-xs" data-invoice="${transaction.invoiceNumber}">
+                            View
+                        </button>
+                    </td>
+                `;
+                transactionHistoryContainer.appendChild(row);
+            });
+            document.querySelectorAll('.view-transaction').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const invoiceNumber = this.dataset.invoice;
+                    const transaction = transactions.find(t => t.invoiceNumber === invoiceNumber);
+                    if (transaction) {
+                        generateReceipt(transaction);
+                        paymentSection.classList.add('hidden');
+                        receiptSection.classList.remove('hidden');
+                    }
+                });
+            });
+        }
+
+        function renderDataView() {
+            // Sales Transactions
+            salesDataContainer.innerHTML = '';
+            if (transactions.length === 0) {
+                salesDataContainer.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                            No sales transactions yet.
+                        </td>
+                    </tr>
+                `;
+            } else {
+                const sortedTransactions = [...transactions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                sortedTransactions.forEach(transaction => {
+                    const date = new Date(transaction.timestamp);
+                    const dateString = date.toLocaleDateString('en-ZA');
+                    const timeString = date.toLocaleTimeString('en-ZA');
+                    const items = transaction.items.map(item => `${item.name} (${item.quantity})`).join(', ');
+                    const row = document.createElement('tr');
+                    row.className = 'border-t border-gray-100';
+                    row.innerHTML = `
+                        <td class="px-4 py-3 text-sm font-medium">${transaction.invoiceNumber}</td>
+                        <td class="px-4 py-3 text-sm">${dateString} ${timeString}</td>
+                        <td class="px-4 py-3 text-sm">${items}</td>
+                        <td class="px-4 py-3 text-sm text-right">R${transaction.total.toFixed(2)}</td>
+                        <td class="px-4 py-3 text-right">
+                            <button class="view-transaction bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded text-xs" data-invoice="${transaction.invoiceNumber}">
+                                View
+                            </button>
+                            ${isEditing ? `
+                                <button class="delete-transaction bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs ml-2" data-invoice="${transaction.invoiceNumber}">
+                                    Delete
+                                </button>
+                            ` : ''}
+                        </td>
+                    `;
+                    salesDataContainer.appendChild(row);
+                });
+            }
+
+            // Inventory Received
+            inventoryDataContainer.innerHTML = '';
+            if (inventoryReceived.length === 0) {
+                inventoryDataContainer.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-4 py-8 text-center text-gray-500">
+                            No inventory received yet.
+                        </td>
+                    </tr>
+                `;
+            } else {
+                const sortedInventory = [...inventoryReceived].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                sortedInventory.forEach(record => {
+                    const date = new Date(record.timestamp);
+                    const dateString = date.toLocaleDateString('en-ZA');
+                    const timeString = date.toLocaleTimeString('en-ZA');
+                    const items = record.items.map(item => `${item.name} (${item.quantity})`).join(', ');
+                    const row = document.createElement('tr');
+                    row.className = 'border-t border-gray-100';
+                    row.innerHTML = `
+                        <td class="px-4 py-3 text-sm font-medium">${record.receiveId}</td>
+                        <td class="px-4 py-3 text-sm">${dateString} ${timeString}</td>
+                        <td class="px-4 py-3 text-sm">${items}</td>
+                        <td class="px-4 py-3 text-right">
+                            ${isEditing ? `
+                                <button class="delete-inventory bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs" data-receive-id="${record.receiveId}">
+                                    Delete
+                                </button>
+                            ` : ''}
+                        </td>
+                    `;
+                    inventoryDataContainer.appendChild(row);
+                });
+            }
+
+            renderStockList();
+
+            // Attach event listeners for delete buttons
+            document.querySelectorAll('.delete-transaction').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const invoiceNumber = this.dataset.invoice;
+                    if (confirm(`Are you sure you want to delete transaction ${invoiceNumber}?`)) {
+                        const transaction = transactions.find(t => t.invoiceNumber === invoiceNumber);
+                        // Reverse stock changes
+                        transaction.items.forEach(item => {
+                            const product = products.find(p => p.barcode === item.barcode);
+                            product.stock += item.quantity;
+                        });
+                        transactions = transactions.filter(t => t.invoiceNumber !== invoiceNumber);
+                        saveTransactions();
+                        saveProducts();
+                        renderDataView();
+                        renderTransactionHistory();
+                        renderStockList();
+                    }
+                });
+            });
+
+            document.querySelectorAll('.delete-inventory').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const receiveId = this.dataset.receiveId;
+                    if (confirm(`Are you sure you want to delete inventory record ${receiveId}?`)) {
+                        const record = inventoryReceived.find(r => r.receiveId === receiveId);
+                        // Reverse stock changes
+                        record.items.forEach(item => {
+                            const product = products.find(p => p.barcode === item.barcode);
+                            product.stock -= item.quantity;
+                            if (product.stock < 0) product.stock = 0; // Prevent negative stock
+                        });
+                        inventoryReceived = inventoryReceived.filter(r => r.receiveId !== receiveId);
+                        saveInventoryReceived();
+                        saveProducts();
+                        renderDataView();
+                        renderStockList();
+                    }
+                });
+            });
+
+            document.querySelectorAll('.view-transaction').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const invoiceNumber = this.dataset.invoice;
+                    const transaction = transactions.find(t => t.invoiceNumber === invoiceNumber);
+                    if (transaction) {
+                        generateReceipt(transaction);
+                        paymentSection.classList.add('hidden');
+                        receiptSection.classList.remove('hidden');
+                    }
+                });
+            });
+        }
+
+        toggleEditBtn.addEventListener('click', function() {
+            showPasswordPrompt(() => {
+                isEditing = !isEditing;
+                toggleEditBtn.textContent = isEditing ? 'Disable Edit' : 'Enable Edit';
+                renderDataView();
+            });
+        });
+
+        copyCsvBtn.addEventListener('click', function() {
+            showPasswordPrompt(() => {
+                copyDataAsCsv();
+            });
+        });
+
+        addProductBtn.addEventListener('click', function() {
+            showPasswordPrompt(() => {
+                addProductForm.classList.remove('hidden');
+                newName.focus();
+            });
+        });
+
+        cancelAdd.addEventListener('click', function() {
+            addProductForm.classList.add('hidden');
+            clearAddForm();
+        });
+
+        saveNewProduct.addEventListener('click', function() {
+            const name = newName.value.trim();
+            const barcode = newBarcode.value.trim();
+            const price = parseFloat(newPrice.value);
+            const stock = parseInt(newStock.value);
+            if (!name || isNaN(price) || price < 0 || isNaN(stock) || stock < 0) {
+                alert('Please enter valid details.');
+                return;
+            }
+            if (products.find(p => p.barcode === barcode && barcode !== '')) {
+                alert('Barcode already exists.');
+                return;
+            }
+            products.push({ barcode, name, price, stock });
+            saveProducts();
+            renderStockList();
+            addProductForm.classList.add('hidden');
+            clearAddForm();
+        });
+
+        function clearAddForm() {
+            newName.value = '';
+            newBarcode.value = '';
+            newPrice.value = '';
+            newStock.value = '0';
+        }
+
+        function showPasswordPrompt(callback) {
+            passwordPrompt.classList.remove('hidden');
+            passwordInput.value = '';
+            passwordInput.focus();
+            passwordSubmit.onclick = () => {
+                if (passwordInput.value === ADMIN_PASSWORD) {
+                    passwordPrompt.classList.add('hidden');
+                    callback();
+                } else {
+                    alert('Incorrect password.');
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                }
+            };
+            passwordCancel.onclick = () => {
+                passwordPrompt.classList.add('hidden');
+                passwordInput.value = '';
+            };
+        }
+
+        function copyDataAsCsv() {
+            let csv = '';
+
+            // Sales Transactions CSV
+            csv += 'Sales Transactions\n';
+            csv += '"Invoice #","Date & Time","Items","Total","Amount Paid","Change"\n';
+            transactions.forEach(transaction => {
+                const date = new Date(transaction.timestamp);
+                const dateString = date.toLocaleDateString('en-ZA');
+                const timeString = date.toLocaleTimeString('en-ZA');
+                const items = transaction.items.map(item => `${item.name} (${item.quantity})`).join('; ');
+                csv += `"${transaction.invoiceNumber}","${dateString} ${timeString}","${items.replace(/"/g, '""')}","${transaction.total.toFixed(2)}","${transaction.amountPaid.toFixed(2)}","${transaction.change.toFixed(2)}"\n`;
+            });
+
+            // Inventory Received CSV
+            csv += '\nInventory Received\n';
+            csv += '"Receive ID","Date & Time","Items"\n';
+            inventoryReceived.forEach(record => {
+                const date = new Date(record.timestamp);
+                const dateString = date.toLocaleDateString('en-ZA');
+                const timeString = date.toLocaleTimeString('en-ZA');
+                const items = record.items.map(item => `${item.name} (${item.quantity})`).join('; ');
+                csv += `"${record.receiveId}","${dateString} ${timeString}","${items.replace(/"/g, '""')}"\n`;
+            });
+
+            // Current Stock Levels CSV
+            csv += '\nCurrent Stock Levels\n';
+            csv += '"Product","Barcode","Price","Stock"\n';
+            products.forEach(product => {
+                csv += `"${product.name.replace(/"/g, '""')}","${product.barcode}","${product.price.toFixed(2)}","${product.stock}"\n`;
+            });
+
+            const textarea = document.createElement('textarea');
+            textarea.value = csv;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            alert('Data copied to clipboard as CSV!');
+        }
+
+        document.addEventListener('click', function() {
+            if (!document.activeElement.matches('input, button, select, textarea')) {
+                productSearchInput.focus();
+            }
+        });
+
+        initPOS();
+    </script>
+</body>
+</html>
