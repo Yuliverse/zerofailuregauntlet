@@ -547,6 +547,57 @@ a:hover{text-decoration:underline;}
 
 @keyframes slideUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
 
+/* ── LANDING ABOUT SECTION ── */
+.land-about{
+  margin-bottom:36px;text-align:left;
+}
+.land-about-intro{
+  font-family:'Rajdhani',sans-serif;font-size:16px;line-height:1.85;
+  color:var(--txt);font-weight:500;margin-bottom:24px;
+  border-left:3px solid var(--acc);padding-left:16px;
+}
+.land-divider{
+  height:1px;background:var(--bdr);margin:24px 0;
+  position:relative;
+}
+.land-divider::after{
+  content:'';position:absolute;left:0;top:0;
+  width:60px;height:1px;background:var(--acc);
+}
+.land-about-body{
+  font-family:'Rajdhani',sans-serif;font-size:14px;line-height:1.85;
+  color:var(--dim);margin-bottom:28px;
+}
+.land-about-body strong{color:var(--acc3);font-weight:600;}
+.land-outcomes{margin-bottom:0;}
+.land-outcomes-title{
+  font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:4px;
+  color:var(--acc);text-transform:uppercase;margin-bottom:18px;
+}
+.land-outcomes-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;
+}
+@media(max-width:560px){.land-outcomes-grid{grid-template-columns:1fr;}}
+.outcome-item{
+  display:flex;align-items:flex-start;gap:12px;
+  background:var(--s1);border:1px solid var(--bdr);
+  padding:14px;transition:border-color .2s;
+}
+.outcome-item:hover{border-color:var(--bdr2);}
+.outcome-icon{font-size:22px;flex-shrink:0;margin-top:1px;}
+.outcome-heading{
+  font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;
+  letter-spacing:2px;color:var(--txt);margin-bottom:4px;
+}
+.outcome-desc{
+  font-family:'Rajdhani',sans-serif;font-size:12px;
+  color:var(--dim);line-height:1.6;
+}
+.land-about-sub{
+  font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;
+  color:var(--mute);text-align:center;padding:8px 0;
+}
+
 /* ── NEWSLETTER LINK ── */
 .newsletter-link-wrap{
   margin-top:28px;display:flex;justify-content:center;
@@ -600,9 +651,72 @@ a:hover{text-decoration:underline;}
       <div class="lstat"><div class="lstat-num">40+</div><div class="lstat-lbl">Min/Day</div></div>
       <div class="lstat"><div class="lstat-num">17</div><div class="lstat-lbl">FK Sessions</div></div>
     </div>
-    <div style="font-size:13px;color:var(--dim);letter-spacing:1px;margin-bottom:36px;font-family:'Rajdhani',sans-serif;max-width:500px;margin-left:auto;margin-right:auto;line-height:1.7;">
-      Muscle retention. Fat incineration. Zero excuses.<br>
-      Dumbbells · Calisthenics · HIIT · Tabata
+    <div class="land-about">
+      <div class="land-about-intro">
+        The Zero Failure Gauntlet is a structured 12-week home workout challenge built for people who are done making excuses. No gym membership. No complicated equipment. Just a pair of dumbbells, your bodyweight, and an unbreakable commitment to showing up five days a week — every single week — for three months straight.
+      </div>
+
+      <div class="land-divider"></div>
+
+      <div class="land-about-body">
+        Each session runs a minimum of 40 minutes and combines the best free-to-follow YouTube trainers across two disciplines: <strong>hypertrophy-focused dumbbell training</strong> to build and retain muscle, and <strong>MetCon, HIIT and Tabata conditioning</strong> to strip fat and build cardiovascular capacity simultaneously. The programme rotates trainers weekly to prevent adaptation and keep your body guessing — because your muscles grow when they're surprised, not comfortable.
+        <br><br>
+        The name isn't motivational fluff. Zero Failure means the programme is designed with no excuses baked in — every session is accessible, every workout is pre-loaded with a video link, and your progress is tracked in real time. The only variable is whether you press play.
+      </div>
+
+      <div class="land-outcomes">
+        <div class="land-outcomes-title">// WHAT YOU WILL ACHIEVE</div>
+        <div class="land-outcomes-grid">
+          <div class="outcome-item">
+            <div class="outcome-icon">💪</div>
+            <div class="outcome-text">
+              <div class="outcome-heading">LEAN MUSCLE GAIN</div>
+              <div class="outcome-desc">Progressive dumbbell loading builds real, visible muscle across your chest, back, shoulders, arms and legs — without a gym.</div>
+            </div>
+          </div>
+          <div class="outcome-item">
+            <div class="outcome-icon">🔥</div>
+            <div class="outcome-text">
+              <div class="outcome-heading">FAT LOSS</div>
+              <div class="outcome-desc">High-intensity MetCon and HIIT sessions elevate your metabolism and maximise caloric burn — even hours after the session ends.</div>
+            </div>
+          </div>
+          <div class="outcome-item">
+            <div class="outcome-icon">⚡</div>
+            <div class="outcome-text">
+              <div class="outcome-heading">CARDIOVASCULAR FITNESS</div>
+              <div class="outcome-desc">Tabata protocols and conditioning circuits build a stronger heart, better oxygen efficiency, and endurance that carries into daily life.</div>
+            </div>
+          </div>
+          <div class="outcome-item">
+            <div class="outcome-icon">🧠</div>
+            <div class="outcome-text">
+              <div class="outcome-heading">MENTAL RESILIENCE</div>
+              <div class="outcome-desc">Sixty completed sessions over 12 weeks builds something no supplement can provide — proof to yourself that you follow through.</div>
+            </div>
+          </div>
+          <div class="outcome-item">
+            <div class="outcome-icon">📈</div>
+            <div class="outcome-text">
+              <div class="outcome-heading">BODY RECOMPOSITION</div>
+              <div class="outcome-desc">The dual-method approach — strength training plus conditioning — simultaneously builds muscle and burns fat for a complete body transformation.</div>
+            </div>
+          </div>
+          <div class="outcome-item">
+            <div class="outcome-icon">🏆</div>
+            <div class="outcome-text">
+              <div class="outcome-heading">UNBREAKABLE CONSISTENCY</div>
+              <div class="outcome-desc">With daily streak tracking, Stoic wisdom, and Japanese philosophy milestones, the Gauntlet builds the habit of training as a non-negotiable.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="land-divider"></div>
+
+      <div class="land-about-sub">
+        Dumbbells · Calisthenics · HIIT · Tabata · No excuses
+      </div>
     </div>
 
     <div class="username-section">
