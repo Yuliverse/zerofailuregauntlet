@@ -1056,307 +1056,268 @@ function closeModal(id) {
    DATA
 ══════════════════════════════════════════ */
 const TRAINERS = {
-  'FK':  'Fitness Kay Kay',
-  'CG':  'Caroline Girvan',
-  'GA':  'Growing Annas',
-  'TD':  'TIFFxDAN',
-  'DHM': 'Dan The Hiitman',
-  'HR':  'Heather Robertson',
-  'CH':  'Chris Heria',
-  'MT':  'Midas Touch',
-  'SC2': 'SquatCouple',
-  'JH':  'Jaeho-Fitness',
-  'BJ':  'Bully Juice',
-  'JT':  'Juice & Toya',
-  'NBA': 'No Bad Addictions',
   'AT':  'AllBlanc TV',
-  'OS':  'Oliver Sjostrom',
+  'BJ':  'Bully Juice',
+  'CG':  'Caroline Girvan',
+  'DHM': 'Dan The Hiitman',
+  'FK':  'Fitness Kay Kay',
+  'GA':  'Growing Annas',
+  'HR':  'Heather Robertson',
+  'JH':  'Jaeho-Fitness',
   'JY':  'Jordan Yeoh',
-  'AP':  'Austin Pratt',
-  'NBD': 'No Bad Days',
+  'NBA': 'No Bad Addictions',
+  'TD':  'TIFFxDAN',
+  'TX':  'THENX (Chris Heria)',
 };
 
 const PROGRAM = {
   name: "Zero Failure Gauntlet — 12-Week Program",
   weeks: [
     {
-      week: 1, theme: "Ignition & Adaptation",
+      week: 1, theme: "Ignition & Base Building",
       workouts: [
         { day: 1, routines: [
-          {trainer:"CG",  type:"Weights", dur:40, vid:"BAtaHTTyfPI"},
-          {trainer:"JY",  type:"Body",    dur:10, vid:"ooLFU45-m0U"}
+          {trainer:"CG",  type:"Weights", dur:30, vid:"BAtaHTTyfPI"},
+          {trainer:"CG",  type:"Weights", dur:25, vid:"xVj2Q2_2EJY"}
         ]},
         { day: 2, routines: [
-          {trainer:"GA",  type:"Weights", dur:40, vid:"4gX0SWUiV9k"},
-          {trainer:"TD",  type:"Body",    dur:10, vid:"3U_TXBVnW2A"}
+          {trainer:"BJ",  type:"Body",    dur:40, vid:"mZErE1n4DuU"}
         ]},
         { day: 3, routines: [
-          {trainer:"FK",  type:"Body",    dur:20, vid:"JOE-eogo3UE"},
-          {trainer:"JH",  type:"Body",    dur:20, vid:"KNFbXsO5J5U"}
+          {trainer:"GA",  type:"Weights", dur:40, vid:"s0Qbxm3gUso"}
         ]},
         { day: 4, routines: [
-          {trainer:"MT",  type:"Weights", dur:40, vid:"D0mEEyGV3wg"},
-          {trainer:"CH",  type:"Body",    dur:10, vid:"jzUpUe29lXI"}
+          {trainer:"JY",  type:"Body",    dur:47, vid:"apXw4sbKpPM"}
         ]},
         { day: 5, routines: [
-          {trainer:"FK",  type:"Body",    dur:40, vid:"vtNefhKkdqQ"}
+          {trainer:"HR",  type:"Weights", dur:40, vid:"SlUJMqLSaqc"}
         ]},
       ]
     },
     {
-      week: 2, theme: "Shock Phase",
+      week: 2, theme: "Shock Phase — Volume Up",
       workouts: [
         { day: 1, routines: [
-          {trainer:"FK",  type:"Weights", dur:40, vid:"LWV8lMPBtiE"},
-          {trainer:"MT",  type:"Body",    dur:10, vid:"qiBDUtA5kPw"}
+          {trainer:"DHM", type:"Weights", dur:40, vid:"mPD1Hc_xNdU"}
         ]},
         { day: 2, routines: [
-          {trainer:"MT",  type:"Weights", dur:35, vid:"9py12XY8GCA"},
-          {trainer:"SC2", type:"Body",    dur:15, vid:"ab-vQJL_mMM"}
+          {trainer:"NBA", type:"Body",    dur:40, vid:"Y8z2ORzZY0w"}
         ]},
         { day: 3, routines: [
-          {trainer:"GA",  type:"Weights", dur:30, vid:"w5onVaah7dM"},
-          {trainer:"JH",  type:"Body",    dur:20, vid:"4auucb8pQic"}
+          {trainer:"GA",  type:"Weights", dur:40, vid:"4gX0SWUiV9k"}
         ]},
         { day: 4, routines: [
-          {trainer:"HR",  type:"Weights", dur:40, vid:"9Ww76JUXpXM"},
-          {trainer:"TD",  type:"Body",    dur:10, vid:"BdhqubW1GJE"}
+          {trainer:"TX",  type:"Body",    dur:20, vid:"tNGS90JWLxw"},
+          {trainer:"TX",  type:"Body",    dur:20, vid:"3YL8Tfr73rE"}
         ]},
         { day: 5, routines: [
-          {trainer:"NBA", type:"Body",    dur:25, vid:"3p35bBbxNTk"},
-          {trainer:"BJ",  type:"Body",    dur:15, vid:"JFzEp-wwRKk"}
+          {trainer:"TD",  type:"Weights", dur:40, vid:"ew7PP6lSDXk"}
         ]},
       ]
     },
     {
-      week: 3, theme: "Hypertrophy Focus",
+      week: 3, theme: "Hypertrophy Focus — Heavy & Controlled",
       workouts: [
         { day: 1, routines: [
-          {trainer:"SC2", type:"Weights", dur:35, vid:"AqJOk82Eai4"},
-          {trainer:"CH",  type:"Body",    dur:10, vid:"IolldJiLf90"}
+          {trainer:"FK",  type:"Weights", dur:40, vid:"LWV8lMPBtiE"}
         ]},
         { day: 2, routines: [
-          {trainer:"TD",  type:"Weights", dur:30, vid:"fJQmoPKvjTg"},
-          {trainer:"OS",  type:"Body",    dur:15, vid:"J212vz33gU4"}
+          {trainer:"JY",  type:"Body",    dur:47, vid:"rrahVVqEPJs"}
         ]},
         { day: 3, routines: [
-          {trainer:"MT",  type:"Body",    dur:20, vid:"eJ4GysO9fP0"},
-          {trainer:"AT",  type:"Body",    dur:20, vid:"PFK9eQqdmuU"}
+          {trainer:"HR",  type:"Weights", dur:40, vid:"Ey7KAjprvHw"}
         ]},
         { day: 4, routines: [
-          {trainer:"JT",  type:"Weights", dur:50, vid:"PJCXd0LoASQ"}
+          {trainer:"BJ",  type:"Body",    dur:40, vid:"vkF4lm1Cos8"}
         ]},
         { day: 5, routines: [
-          {trainer:"FK",  type:"Body",    dur:40, vid:"n6WHnIu-oG4"}
+          {trainer:"CG",  type:"Weights", dur:30, vid:"ScInpT_5dIQ"},
+          {trainer:"CG",  type:"Weights", dur:25, vid:"orH_lessqN0"}
         ]},
       ]
     },
     {
-      week: 4, theme: "Volume & Intensity Surge",
+      week: 4, theme: "Volume Surge — Push the Limit",
       workouts: [
         { day: 1, routines: [
-          {trainer:"BJ",  type:"Weights", dur:45, vid:"l5gWYLJKFwQ"},
-          {trainer:"GA",  type:"Body",    dur:10, vid:"jexpqjUGhUw"}
+          {trainer:"DHM", type:"Weights", dur:40, vid:"Zgj31O7BLsw"}
         ]},
         { day: 2, routines: [
-          {trainer:"DHM", type:"Weights", dur:30, vid:"CyARVVIq_Oc"},
-          {trainer:"AT",  type:"Body",    dur:20, vid:"JBz2dILOVlc"}
+          {trainer:"NBA", type:"Body",    dur:40, vid:"lMI_qT2kJhY"}
         ]},
         { day: 3, routines: [
-          {trainer:"FK",  type:"Weights", dur:45, vid:"UmIq-LeOoDo"}
+          {trainer:"GA",  type:"Weights", dur:40, vid:"fQRcCjlJzw8"}
         ]},
         { day: 4, routines: [
-          {trainer:"SC2", type:"Weights", dur:40, vid:"egTsKMqMj6s"}
+          {trainer:"AT",  type:"Body",    dur:40, vid:"rXp1u2pJyoY"}
         ]},
         { day: 5, routines: [
-          {trainer:"CG",  type:"Body",    dur:25, vid:"xVj2Q2_2EJY"},
-          {trainer:"SC2", type:"Body",    dur:20, vid:"e3Sy0QhAl8U"}
+          {trainer:"TD",  type:"Weights", dur:40, vid:"dF3-rpaltqs"}
         ]},
       ]
     },
     {
-      week: 5, theme: "Density Conditioning",
+      week: 5, theme: "Density Conditioning — Time Under Tension",
       workouts: [
         { day: 1, routines: [
-          {trainer:"CG",  type:"Weights", dur:40, vid:"xVj2Q2_2EJY"},
-          {trainer:"TD",  type:"Body",    dur:10, vid:"-NFhnXvbdoc"}
-        ]},
-        { day: 2, routines: [
-          {trainer:"GA",  type:"Weights", dur:35, vid:"wt2eAw4hBzU"},
-          {trainer:"DHM", type:"Body",    dur:10, vid:"QUW5juyHLkg"}
-        ]},
-        { day: 3, routines: [
-          {trainer:"FK",  type:"Weights", dur:20, vid:"KGBdHIpjdtg"},
-          {trainer:"JH",  type:"Body",    dur:20, vid:"KNFbXsO5J5U"}
-        ]},
-        { day: 4, routines: [
-          {trainer:"DHM", type:"Weights", dur:50, vid:"vp8ASKZGU8Y"}
-        ]},
-        { day: 5, routines: [
-          {trainer:"FK",  type:"Body",    dur:40, vid:"vtNefhKkdqQ"}
-        ]},
-      ]
-    },
-    {
-      week: 6, theme: "Strength Endurance Base",
-      workouts: [
-        { day: 1, routines: [
-          {trainer:"TD",  type:"Weights", dur:40, vid:"e39eoxw9KkM"},
-          {trainer:"JY",  type:"Body",    dur:10, vid:"hRlp66B-lx4"}
-        ]},
-        { day: 2, routines: [
-          {trainer:"DHM", type:"Weights", dur:30, vid:"sKz102jMW4A"},
-          {trainer:"AT",  type:"Body",    dur:20, vid:"wcSiAdCnvCQ"}
-        ]},
-        { day: 3, routines: [
           {trainer:"FK",  type:"Weights", dur:45, vid:"J2SJAXxTp4M"}
         ]},
+        { day: 2, routines: [
+          {trainer:"JY",  type:"Body",    dur:40, vid:"Rjyp-ENl2aI"}
+        ]},
+        { day: 3, routines: [
+          {trainer:"HR",  type:"Weights", dur:40, vid:"yRtcwWMcjmg"}
+        ]},
         { day: 4, routines: [
-          {trainer:"GA",  type:"Weights", dur:35, vid:"mHxYGnhdUAY"},
-          {trainer:"TD",  type:"Body",    dur:10, vid:"BdhqubW1GJE"}
+          {trainer:"TX",  type:"Body",    dur:20, vid:"5KXZ9I2z1m4"},
+          {trainer:"JH",  type:"Body",    dur:25, vid:"Pa5rdvyCIHY"}
         ]},
         { day: 5, routines: [
+          {trainer:"GA",  type:"Weights", dur:40, vid:"MTF8-wuTH4Y"}
+        ]},
+      ]
+    },
+    {
+      week: 6, theme: "Strength Endurance — Unbreakable",
+      workouts: [
+        { day: 1, routines: [
+          {trainer:"DHM", type:"Weights", dur:40, vid:"2uPyV7Goj9M"}
+        ]},
+        { day: 2, routines: [
+          {trainer:"NBA", type:"Body",    dur:40, vid:"zcpAyFLxI0c"}
+        ]},
+        { day: 3, routines: [
+          {trainer:"CG",  type:"Weights", dur:40, vid:"I_3I73B1NPo"}
+        ]},
+        { day: 4, routines: [
           {trainer:"BJ",  type:"Body",    dur:45, vid:"HzfHKN6rmpk"}
         ]},
+        { day: 5, routines: [
+          {trainer:"TD",  type:"Weights", dur:40, vid:"Aip3tSCO96c"}
+        ]},
       ]
     },
     {
-      week: 7, theme: "MetCon Engine",
+      week: 7, theme: "MetCon Engine — Sweat & Sculpt",
       workouts: [
         { day: 1, routines: [
-          {trainer:"FK",  type:"Weights", dur:30, vid:"oEI2oV6RP_8"},
-          {trainer:"MT",  type:"Body",    dur:15, vid:"eJ4GysO9fP0"}
-        ]},
-        { day: 2, routines: [
-          {trainer:"OS",  type:"Weights", dur:20, vid:"nixaLRF0Jd8"},
-          {trainer:"BJ",  type:"Weights", dur:20, vid:"lBickDLoU8o"}
-        ]},
-        { day: 3, routines: [
-          {trainer:"FK",  type:"Body",    dur:20, vid:"JOE-eogo3UE"},
-          {trainer:"JH",  type:"Body",    dur:20, vid:"7nxUt-QPBjs"}
-        ]},
-        { day: 4, routines: [
           {trainer:"FK",  type:"Weights", dur:45, vid:"bk0JlSXMbS4"}
         ]},
-        { day: 5, routines: [
-          {trainer:"GA",  type:"Body",    dur:25, vid:"_OZWKdv1_w0"},
-          {trainer:"AT",  type:"Body",    dur:20, vid:"PFK9eQqdmuU"}
-        ]},
-      ]
-    },
-    {
-      week: 8, theme: "The Gauntlet Push",
-      workouts: [
-        { day: 1, routines: [
-          {trainer:"GA",  type:"Weights", dur:40, vid:"UF7dfEEVDp8"},
-          {trainer:"CH",  type:"Body",    dur:10, vid:"FwWf1KLM3ro"}
-        ]},
         { day: 2, routines: [
-          {trainer:"DHM", type:"Weights", dur:20, vid:"XVwVnFQCgNw"},
-          {trainer:"HR",  type:"Weights", dur:20, vid:"155Nb8rjYLw"}
+          {trainer:"JH",  type:"Body",    dur:25, vid:"KNFbXsO5J5U"},
+          {trainer:"JH",  type:"Body",    dur:25, vid:"jFvQl1boyM0"}
         ]},
         { day: 3, routines: [
-          {trainer:"FK",  type:"Body",    dur:30, vid:"n6WHnIu-oG4"},
-          {trainer:"SC2", type:"Body",    dur:10, vid:"pMddSAVXBCQ"}
+          {trainer:"GA",  type:"Weights", dur:40, vid:"J-5IcLRGMFk"}
         ]},
         { day: 4, routines: [
-          {trainer:"MT",  type:"Weights", dur:40, vid:"D0mEEyGV3wg"}
+          {trainer:"NBA", type:"Body",    dur:40, vid:"mSSi9WDTvvQ"}
         ]},
         { day: 5, routines: [
-          {trainer:"BJ",  type:"Body",    dur:20, vid:"SGGFhEpAkPw"},
-          {trainer:"JY",  type:"Body",    dur:20, vid:"dFCkDHglbvM"}
+          {trainer:"HR",  type:"Weights", dur:40, vid:"USi3LmPlj_0"}
         ]},
       ]
     },
     {
-      week: 9, theme: "Power & Threshold",
+      week: 8, theme: "The Gauntlet Push — No Mercy",
       workouts: [
         { day: 1, routines: [
-          {trainer:"AP",  type:"Weights", dur:30, vid:"l5px6GbSBV8"},
-          {trainer:"HR",  type:"Weights", dur:20, vid:"0YCRcnhd4I0"}
+          {trainer:"DHM", type:"Weights", dur:40, vid:"LYU7baSC49Q"}
         ]},
         { day: 2, routines: [
-          {trainer:"DHM", type:"Weights", dur:20, vid:"K01g2UV7YM0"},
-          {trainer:"CH",  type:"Body",    dur:20, vid:"8PwoytUU06g"}
+          {trainer:"TX",  type:"Body",    dur:20, vid:"NPK0DLP4_r8"},
+          {trainer:"TX",  type:"Body",    dur:20, vid:"KGPiCdKcpSM"}
         ]},
         { day: 3, routines: [
-          {trainer:"FK",  type:"Body",    dur:20, vid:"JOE-eogo3UE"},
-          {trainer:"JY",  type:"Body",    dur:20, vid:"sotEYDlY7o8"}
+          {trainer:"TD",  type:"Weights", dur:40, vid:"K5NuZmyGHxs"}
         ]},
         { day: 4, routines: [
-          {trainer:"FK",  type:"Weights", dur:50, vid:"UhjLARslips"}
+          {trainer:"BJ",  type:"Body",    dur:45, vid:"HzfHKN6rmpk"}
         ]},
         { day: 5, routines: [
-          {trainer:"SC2", type:"Body",    dur:40, vid:"ab-vQJL_mMM"}
+          {trainer:"CG",  type:"Weights", dur:40, vid:"I_3I73B1NPo"}
         ]},
       ]
     },
     {
-      week: 10, theme: "Deep Hypertrophy Base",
+      week: 9, theme: "Peak Conditioning — Sharpen the Edge",
       workouts: [
         { day: 1, routines: [
-          {trainer:"FK",  type:"Weights", dur:30, vid:"oEI2oV6RP_8"},
-          {trainer:"GA",  type:"Weights", dur:20, vid:"C5ayBgdUjOU"}
+          {trainer:"FK",  type:"Weights", dur:50, vid:"UmIq-LeOoDo"}
         ]},
         { day: 2, routines: [
-          {trainer:"MT",  type:"Weights", dur:40, vid:"9py12XY8GCA"},
-          {trainer:"DHM", type:"Body",    dur:10, vid:"QUW5juyHLkg"}
+          {trainer:"NBA", type:"Body",    dur:40, vid:"5gzQEW-Ip_Y"}
         ]},
         { day: 3, routines: [
+          {trainer:"GA",  type:"Weights", dur:40, vid:"DGud1MRLSMg"}
+        ]},
+        { day: 4, routines: [
+          {trainer:"JY",  type:"Body",    dur:47, vid:"apXw4sbKpPM"}
+        ]},
+        { day: 5, routines: [
+          {trainer:"HR",  type:"Weights", dur:40, vid:"sdaImBHvIjo"}
+        ]},
+      ]
+    },
+    {
+      week: 10, theme: "Deep Hypertrophy — Build the Foundation",
+      workouts: [
+        { day: 1, routines: [
+          {trainer:"DHM", type:"Weights", dur:40, vid:"4FaqRNRHX4M"}
+        ]},
+        { day: 2, routines: [
+          {trainer:"AT",  type:"Body",    dur:40, vid:"rXp1u2pJyoY"}
+        ]},
+        { day: 3, routines: [
+          {trainer:"TD",  type:"Weights", dur:40, vid:"dF3-rpaltqs"}
+        ]},
+        { day: 4, routines: [
+          {trainer:"JH",  type:"Body",    dur:25, vid:"sYjggjSijzg"},
+          {trainer:"TX",  type:"Body",    dur:20, vid:"tNGS90JWLxw"}
+        ]},
+        { day: 5, routines: [
           {trainer:"FK",  type:"Weights", dur:50, vid:"uu4T2CTplek"}
         ]},
+      ]
+    },
+    {
+      week: 11, theme: "The Ultimate Burn — Maximum Output",
+      workouts: [
+        { day: 1, routines: [
+          {trainer:"HR",  type:"Weights", dur:40, vid:"Ey7KAjprvHw"}
+        ]},
+        { day: 2, routines: [
+          {trainer:"BJ",  type:"Body",    dur:40, vid:"vkF4lm1Cos8"}
+        ]},
+        { day: 3, routines: [
+          {trainer:"DHM", type:"Weights", dur:40, vid:"Zgj31O7BLsw"}
+        ]},
         { day: 4, routines: [
-          {trainer:"HR",  type:"Weights", dur:60, vid:"9giIbVUqPIQ"}
+          {trainer:"NBA", type:"Body",    dur:40, vid:"lMI_qT2kJhY"}
         ]},
         { day: 5, routines: [
-          {trainer:"FK",  type:"Body",    dur:40, vid:"vtNefhKkdqQ"}
+          {trainer:"GA",  type:"Weights", dur:40, vid:"J-5IcLRGMFk"}
         ]},
       ]
     },
     {
-      week: 11, theme: "The Ultimate Burn",
+      week: 12, theme: "Championship Peak — Finish Strong",
       workouts: [
         { day: 1, routines: [
-          {trainer:"SC2", type:"Weights", dur:35, vid:"AqJOk82Eai4"},
-          {trainer:"CG",  type:"Weights", dur:15, vid:"BAtaHTTyfPI"}
+          {trainer:"FK",  type:"Weights", dur:50, vid:"uu4T2CTplek"}
         ]},
         { day: 2, routines: [
-          {trainer:"GA",  type:"Weights", dur:40, vid:"4gX0SWUiV9k"},
-          {trainer:"SC2", type:"Body",    dur:10, vid:"pMddSAVXBCQ"}
+          {trainer:"JY",  type:"Body",    dur:47, vid:"rrahVVqEPJs"}
         ]},
         { day: 3, routines: [
-          {trainer:"MT",  type:"Body",    dur:20, vid:"eJ4GysO9fP0"},
-          {trainer:"JH",  type:"Body",    dur:20, vid:"KNFbXsO5J5U"}
+          {trainer:"HR",  type:"Weights", dur:40, vid:"USi3LmPlj_0"}
         ]},
         { day: 4, routines: [
-          {trainer:"GA",  type:"Weights", dur:40, vid:"w5onVaah7dM"}
+          {trainer:"AT",  type:"Body",    dur:40, vid:"rXp1u2pJyoY"}
         ]},
         { day: 5, routines: [
-          {trainer:"CG",  type:"Body",    dur:25, vid:"xVj2Q2_2EJY"},
-          {trainer:"SC2", type:"Body",    dur:20, vid:"e3Sy0QhAl8U"}
-        ]},
-      ]
-    },
-    {
-      week: 12, theme: "Championship Peak",
-      workouts: [
-        { day: 1, routines: [
-          {trainer:"CG",  type:"Weights", dur:40, vid:"BAtaHTTyfPI"},
-          {trainer:"MT",  type:"Body",    dur:10, vid:"qiBDUtA5kPw"}
-        ]},
-        { day: 2, routines: [
-          {trainer:"GA",  type:"Weights", dur:35, vid:"wt2eAw4hBzU"},
-          {trainer:"SC2", type:"Body",    dur:15, vid:"ab-vQJL_mMM"}
-        ]},
-        { day: 3, routines: [
-          {trainer:"FK",  type:"Weights", dur:60, vid:"6e4iuUOVAlY"}
-        ]},
-        { day: 4, routines: [
-          {trainer:"SC2", type:"Weights", dur:40, vid:"egTsKMqMj6s"}
-        ]},
-        { day: 5, routines: [
-          {trainer:"FK",  type:"Body",    dur:40, vid:"vtNefhKkdqQ"},
-          {trainer:"GA",  type:"Body",    dur:20, vid:"_OZWKdv1_w0"}
+          {trainer:"TD",  type:"Weights", dur:40, vid:"ew7PP6lSDXk"},
+          {trainer:"CG",  type:"Weights", dur:20, vid:"orH_lessqN0"}
         ]},
       ]
     },
