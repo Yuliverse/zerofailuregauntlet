@@ -328,20 +328,71 @@ a:hover{text-decoration:underline;}
 .os-stat strong{color:var(--acc);}
 
 /* ── MOBILE ── */
+/* ── HOME BUTTON ── */
+.home-btn{
+  background:none;border:1px solid var(--bdr);color:var(--dim);
+  font-size:18px;width:34px;height:34px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;flex-shrink:0;
+}
+.home-btn:hover{border-color:var(--acc);color:var(--acc);}
+
+/* ── MOBILE WEEK NAV ── */
+.mobile-week-nav{
+  display:none;overflow-x:auto;white-space:nowrap;
+  padding:8px 12px;border-bottom:1px solid var(--bdr);
+  background:var(--s1);flex-shrink:0;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+.mobile-week-nav::-webkit-scrollbar{display:none;}
+.mobile-week-nav-inner{display:inline-flex;gap:5px;}
+.mwk-pill{
+  display:inline-flex;flex-direction:column;align-items:center;
+  padding:5px 10px;border:1px solid var(--bdr);background:var(--s2);
+  cursor:pointer;transition:all .2s;min-width:44px;
+  font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:1px;color:var(--dim);
+}
+.mwk-pill:hover{border-color:var(--bdr2);color:var(--txt);}
+.mwk-pill.active{border-color:var(--acc);color:var(--acc);background:rgba(0,230,118,.08);}
+.mwk-pill.done{border-color:var(--acc2);color:var(--acc2);}
+.mwk-pill .mwk-num{font-size:15px;font-weight:700;line-height:1;}
+.mwk-pill .mwk-bar{width:100%;height:2px;background:var(--mute);margin-top:3px;}
+.mwk-pill.active .mwk-bar,.mwk-pill.done .mwk-bar{background:currentColor;opacity:.5;}
+
+/* ── MOBILE BOTTOM NAV ── */
+.mobile-bottom-nav{
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:var(--s1);border-top:1px solid var(--bdr);height:54px;
+}
+.mbn-inner{display:flex;height:100%;}
+.mbn-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:2px;background:none;border:none;
+  color:var(--dim);cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:8px;letter-spacing:1px;text-transform:uppercase;
+  transition:color .2s;border-right:1px solid var(--bdr);
+}
+.mbn-btn:last-child{border-right:none;}
+.mbn-btn:hover,.mbn-btn.mbn-active{color:var(--acc);}
+.mbn-icon{font-size:17px;line-height:1;}
+
+/* Hide old dropdown on all sizes */
+.week-select-mobile{display:none !important;}
+
 @media(max-width:720px){
   .sidebar{display:none;}
-  .main-content{padding:14px;}
-  .week-select-mobile{display:block;}
-  .app-header{padding:0 12px;}
-  .lstat{padding:12px 18px;}
+  .mobile-week-nav{display:block;}
+  .mobile-bottom-nav{display:block;}
+  .main-content{padding:10px 10px 68px;}
+  .app-header{padding:0 10px;}
+  .hdr-newsletter{display:none !important;}
+  .app-logo span{font-size:13px;letter-spacing:1px;}
+  .lstat{padding:12px 14px;}
+  .land-outcomes-grid{grid-template-columns:1fr;}
+  .wh-title{font-size:clamp(24px,6vw,38px);}
+  .routine-trainer{min-width:100px;font-size:12px;}
 }
-.week-select-mobile{
-  display:none;width:100%;background:var(--s2);border:1px solid var(--bdr);
-  color:var(--txt);font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:1px;
-  padding:10px 14px;margin-bottom:16px;outline:none;
-}
-.week-select-mobile:focus{border-color:var(--acc);}
-.week-select-mobile option{background:var(--s2);}
 
 /* ── ANIMATIONS ── */
 @keyframes riseIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
@@ -752,7 +803,7 @@ a:hover{text-decoration:underline;}
 <!-- ══════════════ MAIN APP ══════════════ -->
 <div id="screen-app" class="screen">
   <div class="app-header">
-    <div class="app-logo"><span class="dot"></span>ZERO FAILURE GAUNTLET</div>
+    <div class="app-logo" style="display:flex;align-items:center;gap:12px;"><button class="home-btn" onclick="goHome()" title="Home">⌂</button><span><span class="dot"></span>ZERO FAILURE GAUNTLET</span></div>
     <div class="header-right">
       <a href="https://gymnathinewsletter.substack.com/" target="_blank" rel="noopener" class="hdr-newsletter">✉ NEWSLETTER</a>
       <div class="progress-pill">
@@ -784,7 +835,7 @@ a:hover{text-decoration:underline;}
   </div>
 
   <div class="app-body">
-    <!-- SIDEBAR: week list -->
+    <!-- SIDEBAR: week list (desktop) -->
     <div class="sidebar">
       <div class="sidebar-ttl">
         <span>WEEKS</span>
@@ -795,8 +846,11 @@ a:hover{text-decoration:underline;}
 
     <!-- MAIN CONTENT -->
     <div class="main-content" id="main-content">
-      <!-- Mobile week selector -->
-      <select class="week-select-mobile" id="mobile-select" onchange="selectWeek(parseInt(this.value))"></select>
+
+      <!-- Mobile horizontal week pill nav (replaces old dropdown) -->
+      <div class="mobile-week-nav" id="mobile-week-nav">
+        <div class="mobile-week-nav-inner" id="mobile-week-pills"></div>
+      </div>
 
       <!-- Overall progress -->
       <div class="overall-section">
@@ -843,11 +897,28 @@ a:hover{text-decoration:underline;}
         </div>
       </div>
 
-    </div>
-  </div>
-</div>
+    </div><!-- end main-content -->
+  </div><!-- end app-body -->
 
-<!-- ══════════════ DAY COMPLETE MODAL (Stoic Quote) ══════════════ -->
+  <!-- Mobile bottom nav -->
+  <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+    <div class="mbn-inner">
+      <button class="mbn-btn" onclick="goHome()">
+        <span class="mbn-icon">⌂</span>HOME
+      </button>
+      <button class="mbn-btn mbn-active" onclick="scrollToWeekNav()">
+        <span class="mbn-icon">📅</span>WEEKS
+      </button>
+      <button class="mbn-btn" onclick="scrollToProgress()">
+        <span class="mbn-icon">📈</span>PROGRESS
+      </button>
+      <button class="mbn-btn" onclick="scrollToLegend()">
+        <span class="mbn-icon">📋</span>CHANNELS
+      </button>
+    </div>
+  </nav>
+
+</div> (Stoic Quote) ══════════════ -->
 <div id="modal-day" class="modal-overlay" onclick="closeModal('modal-day')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-stamp">DAY COMPLETE</div>
@@ -1028,14 +1099,6 @@ function goNextWeek(fromWeek) {
   }
 }
 
-/* ── SCROLL UTILITY ── */
-function scrollToTop() {
-  // Scroll both the main-content panel and the window to top
-  const mc = $('main-content');
-  if(mc) mc.scrollTop = 0;
-  window.scrollTo({ top:0, behavior:'instant' });
-}
-
 function openModal(id) {
   const el = $(id);
   if(el) { el.classList.add('open'); document.body.style.overflow = 'hidden'; }
@@ -1078,7 +1141,7 @@ const PROGRAM = {
       workouts: [
         { day: 1, routines: [
           {trainer:"CG",  type:"Weights", dur:30, vid:"BAtaHTTyfPI"},
-          {trainer:"CG",  type:"Weights", dur:25, vid:"xVj2Q2_2EJY"}
+          {trainer:"AT",  type:"Body",    dur:20, vid:"WfdXMj9I7H0"}
         ]},
         { day: 2, routines: [
           {trainer:"BJ",  type:"Body",    dur:40, vid:"mZErE1n4DuU"}
@@ -1087,7 +1150,7 @@ const PROGRAM = {
           {trainer:"GA",  type:"Weights", dur:40, vid:"s0Qbxm3gUso"}
         ]},
         { day: 4, routines: [
-          {trainer:"JY",  type:"Body",    dur:47, vid:"apXw4sbKpPM"}
+          {trainer:"BJ",  type:"Body",    dur:40, vid:"Cc9Eelzd6wQ"}
         ]},
         { day: 5, routines: [
           {trainer:"HR",  type:"Weights", dur:40, vid:"SlUJMqLSaqc"}
@@ -1101,17 +1164,17 @@ const PROGRAM = {
           {trainer:"DHM", type:"Weights", dur:40, vid:"mPD1Hc_xNdU"}
         ]},
         { day: 2, routines: [
-          {trainer:"NBA", type:"Body",    dur:40, vid:"Y8z2ORzZY0w"}
+          {trainer:"TD",  type:"Body",    dur:40, vid:"Y8z2ORzZY0w"}
         ]},
         { day: 3, routines: [
           {trainer:"GA",  type:"Weights", dur:40, vid:"4gX0SWUiV9k"}
         ]},
         { day: 4, routines: [
-          {trainer:"TX",  type:"Body",    dur:20, vid:"tNGS90JWLxw"},
-          {trainer:"TX",  type:"Body",    dur:20, vid:"3YL8Tfr73rE"}
+          {trainer:"TX",  type:"Body",    dur:20, vid:"3YL8Tfr73rE"},
+          {trainer:"JH",  type:"Body",    dur:25, vid:"wExu-2eTiTY"}
         ]},
         { day: 5, routines: [
-          {trainer:"TD",  type:"Weights", dur:40, vid:"ew7PP6lSDXk"}
+          {trainer:"TD",  type:"Weights", dur:40, vid:"80x32oGLyJY"}
         ]},
       ]
     },
@@ -1119,10 +1182,10 @@ const PROGRAM = {
       week: 3, theme: "Hypertrophy Focus — Heavy & Controlled",
       workouts: [
         { day: 1, routines: [
-          {trainer:"FK",  type:"Weights", dur:40, vid:"LWV8lMPBtiE"}
+          {trainer:"FK",  type:"Weights", dur:40, vid:"RG5fhhY2XP4"}
         ]},
         { day: 2, routines: [
-          {trainer:"JY",  type:"Body",    dur:47, vid:"rrahVVqEPJs"}
+          {trainer:"JY",  type:"Body",    dur:40, vid:"MOrRRvSGIQc"}
         ]},
         { day: 3, routines: [
           {trainer:"HR",  type:"Weights", dur:40, vid:"Ey7KAjprvHw"}
@@ -1132,7 +1195,7 @@ const PROGRAM = {
         ]},
         { day: 5, routines: [
           {trainer:"CG",  type:"Weights", dur:30, vid:"ScInpT_5dIQ"},
-          {trainer:"CG",  type:"Weights", dur:25, vid:"orH_lessqN0"}
+          {trainer:"CG",  type:"Weights", dur:20, vid:"_oX5rhz0H3E"}
         ]},
       ]
     },
@@ -1149,7 +1212,7 @@ const PROGRAM = {
           {trainer:"GA",  type:"Weights", dur:40, vid:"fQRcCjlJzw8"}
         ]},
         { day: 4, routines: [
-          {trainer:"AT",  type:"Body",    dur:40, vid:"rXp1u2pJyoY"}
+          {trainer:"AT",  type:"Body",    dur:40, vid:"fFYRpoITZQY"}
         ]},
         { day: 5, routines: [
           {trainer:"TD",  type:"Weights", dur:40, vid:"dF3-rpaltqs"}
@@ -1169,8 +1232,8 @@ const PROGRAM = {
           {trainer:"HR",  type:"Weights", dur:40, vid:"yRtcwWMcjmg"}
         ]},
         { day: 4, routines: [
-          {trainer:"TX",  type:"Body",    dur:20, vid:"5KXZ9I2z1m4"},
-          {trainer:"JH",  type:"Body",    dur:25, vid:"Pa5rdvyCIHY"}
+          {trainer:"JH",  type:"Body",    dur:25, vid:"Pa5rdvyCIHY"},
+          {trainer:"TX",  type:"Body",    dur:20, vid:"5KXZ9I2z1m4"}
         ]},
         { day: 5, routines: [
           {trainer:"GA",  type:"Weights", dur:40, vid:"MTF8-wuTH4Y"}
@@ -1193,7 +1256,8 @@ const PROGRAM = {
           {trainer:"BJ",  type:"Body",    dur:45, vid:"HzfHKN6rmpk"}
         ]},
         { day: 5, routines: [
-          {trainer:"TD",  type:"Weights", dur:40, vid:"Aip3tSCO96c"}
+          {trainer:"FK",  type:"Weights", dur:40, vid:"Aip3tSCO96c"},
+          {trainer:"FK",  type:"Weights", dur:20, vid:"0GkFsQLW6ys"}
         ]},
       ]
     },
@@ -1225,8 +1289,7 @@ const PROGRAM = {
           {trainer:"DHM", type:"Weights", dur:40, vid:"LYU7baSC49Q"}
         ]},
         { day: 2, routines: [
-          {trainer:"TX",  type:"Body",    dur:20, vid:"NPK0DLP4_r8"},
-          {trainer:"TX",  type:"Body",    dur:20, vid:"KGPiCdKcpSM"}
+          {trainer:"BJ",  type:"Body",    dur:40, vid:"cDq-nFmD0rI"}
         ]},
         { day: 3, routines: [
           {trainer:"TD",  type:"Weights", dur:40, vid:"K5NuZmyGHxs"}
@@ -1252,7 +1315,7 @@ const PROGRAM = {
           {trainer:"GA",  type:"Weights", dur:40, vid:"DGud1MRLSMg"}
         ]},
         { day: 4, routines: [
-          {trainer:"JY",  type:"Body",    dur:47, vid:"apXw4sbKpPM"}
+          {trainer:"JY",  type:"Body",    dur:40, vid:"k6StINf5BsQ"}
         ]},
         { day: 5, routines: [
           {trainer:"HR",  type:"Weights", dur:40, vid:"sdaImBHvIjo"}
@@ -1263,17 +1326,17 @@ const PROGRAM = {
       week: 10, theme: "Deep Hypertrophy — Build the Foundation",
       workouts: [
         { day: 1, routines: [
-          {trainer:"DHM", type:"Weights", dur:40, vid:"4FaqRNRHX4M"}
+          {trainer:"GA",  type:"Weights", dur:40, vid:"fQRcCjlJzw8"}
         ]},
         { day: 2, routines: [
-          {trainer:"AT",  type:"Body",    dur:40, vid:"rXp1u2pJyoY"}
+          {trainer:"AT",  type:"Body",    dur:40, vid:"Ajw4PNKPbdo"}
         ]},
         { day: 3, routines: [
-          {trainer:"TD",  type:"Weights", dur:40, vid:"dF3-rpaltqs"}
+          {trainer:"TD",  type:"Weights", dur:40, vid:"bRVuvvJsx-8"}
         ]},
         { day: 4, routines: [
           {trainer:"JH",  type:"Body",    dur:25, vid:"sYjggjSijzg"},
-          {trainer:"TX",  type:"Body",    dur:20, vid:"tNGS90JWLxw"}
+          {trainer:"TX",  type:"Body",    dur:20, vid:"s0sk9iIndtw"}
         ]},
         { day: 5, routines: [
           {trainer:"FK",  type:"Weights", dur:50, vid:"uu4T2CTplek"}
@@ -1287,16 +1350,16 @@ const PROGRAM = {
           {trainer:"HR",  type:"Weights", dur:40, vid:"Ey7KAjprvHw"}
         ]},
         { day: 2, routines: [
-          {trainer:"BJ",  type:"Body",    dur:40, vid:"vkF4lm1Cos8"}
+          {trainer:"BJ",  type:"Body",    dur:40, vid:"8HDqyau8HiU"}
         ]},
         { day: 3, routines: [
-          {trainer:"DHM", type:"Weights", dur:40, vid:"Zgj31O7BLsw"}
+          {trainer:"GA",  type:"Weights", dur:40, vid:"J-5IcLRGMFk"}
         ]},
         { day: 4, routines: [
-          {trainer:"NBA", type:"Body",    dur:40, vid:"lMI_qT2kJhY"}
+          {trainer:"BJ",  type:"Body",    dur:40, vid:"Cc9Eelzd6wQ"}
         ]},
         { day: 5, routines: [
-          {trainer:"GA",  type:"Weights", dur:40, vid:"J-5IcLRGMFk"}
+          {trainer:"GA",  type:"Weights", dur:40, vid:"Mn1EnQhzhlU"}
         ]},
       ]
     },
@@ -1304,16 +1367,18 @@ const PROGRAM = {
       week: 12, theme: "Championship Peak — Finish Strong",
       workouts: [
         { day: 1, routines: [
-          {trainer:"FK",  type:"Weights", dur:50, vid:"uu4T2CTplek"}
+          {trainer:"FK",  type:"Weights", dur:50, vid:"8tiYX9f6Awg"}
         ]},
         { day: 2, routines: [
-          {trainer:"JY",  type:"Body",    dur:47, vid:"rrahVVqEPJs"}
+          {trainer:"JY",  type:"Body",    dur:25, vid:"Lqb_oK6qweA"},
+          {trainer:"JY",  type:"Body",    dur:25, vid:"RdGVyeJ_iY4"}
         ]},
         { day: 3, routines: [
-          {trainer:"HR",  type:"Weights", dur:40, vid:"USi3LmPlj_0"}
+          {trainer:"HR",  type:"Weights", dur:25, vid:"TW2i0AdNNK8"},
+          {trainer:"HR",  type:"Weights", dur:20, vid:"wk4-TDsTF_8"}
         ]},
         { day: 4, routines: [
-          {trainer:"AT",  type:"Body",    dur:40, vid:"rXp1u2pJyoY"}
+          {trainer:"AT",  type:"Body",    dur:40, vid:"Ahysg2BP14M"}
         ]},
         { day: 5, routines: [
           {trainer:"TD",  type:"Weights", dur:40, vid:"ew7PP6lSDXk"},
@@ -1366,12 +1431,11 @@ function startApp() {
 
 function renderAll() {
   renderSidebar();
-  renderMobileSelect();
+  renderMobileWeekPills();
   renderWeek(STATE.currentWeek);
   renderTrainerLegend();
   updateOverall();
   updateHeaderUser();
-  // Always start at the top
   const mc = $('main-content');
   if(mc) mc.scrollTop = 0;
 }
@@ -1406,12 +1470,30 @@ function renderSidebar() {
   $('sb-done').textContent = `${weeksDone}/12`;
 }
 
-function renderMobileSelect() {
-  const sel = $('mobile-select');
-  sel.innerHTML = PROGRAM.weeks.map(w =>
-    `<option value="${w.week}" ${w.week===STATE.currentWeek?'selected':''}>WK ${w.week} — ${w.theme}</option>`
-  ).join('');
+function renderMobileWeekPills() {
+  const container = $('mobile-week-pills');
+  if(!container) return;
+  container.innerHTML = '';
+  PROGRAM.weeks.forEach(w => {
+    const total   = w.workouts.length;
+    const done    = w.workouts.filter(d => STATE.completed[key(w.week, d.day)]).length;
+    const allDone = done === total;
+    const isActive= w.week === STATE.currentWeek;
+    const pill = document.createElement('div');
+    pill.className = 'mwk-pill' + (isActive?' active':'') + (allDone?' done':'');
+    pill.id = `mwk-${w.week}`;
+    pill.innerHTML = `<div class="mwk-num">W${w.week}</div><div class="mwk-bar"></div>`;
+    pill.title = w.theme;
+    pill.onclick = () => selectWeek(w.week);
+    container.appendChild(pill);
+  });
+  // Scroll active pill into view
+  const active = $(`mwk-${STATE.currentWeek}`);
+  if(active) active.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
 }
+
+// Legacy stub kept for safety
+function renderMobileSelect() { renderMobileWeekPills(); }
 
 /* ══════════════════════════════════════════
    WEEK VIEW
@@ -1420,9 +1502,14 @@ function selectWeek(n) {
   STATE.currentWeek = n;
   save();
   renderSidebar();
-  renderMobileSelect();
+  renderMobileWeekPills();
   renderWeek(n);
   scrollToTop();
+  // On mobile scroll active pill into view after brief render delay
+  setTimeout(() => {
+    const pill = $(`mwk-${n}`);
+    if(pill) pill.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+  }, 100);
 }
 
 function renderWeek(n) {
@@ -1674,6 +1761,44 @@ function confirmReset() {
   save();
   scrollToTop();
   renderAll();
+}
+
+/* ══════════════════════════════════════════
+   NAVIGATION HELPERS
+══════════════════════════════════════════ */
+function goHome() {
+  // Stop any active workout timer
+  if(typeof WK !== 'undefined' && WK.tid) { clearInterval(WK.tid); WK.tid = null; }
+  // Hide app, show landing
+  document.getElementById('screen-app').classList.remove('active');
+  document.getElementById('screen-landing').classList.add('active');
+  // Pre-fill username
+  const uInput = $('username-input');
+  if(uInput && STATE.username) uInput.value = STATE.username;
+  // Scroll landing to top
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+function scrollToTop() {
+  const mc = $('main-content');
+  if(mc) mc.scrollTo({ top:0, behavior:'smooth' });
+}
+
+function scrollToWeekNav() {
+  // On mobile, scroll to the week pills at top of content
+  const nav = $('mobile-week-nav');
+  if(nav) nav.scrollIntoView({ behavior:'smooth', block:'start' });
+  // On desktop do nothing (sidebar always visible)
+}
+
+function scrollToProgress() {
+  const el = document.querySelector('.overall-section');
+  if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function scrollToLegend() {
+  const el = document.querySelector('.trainer-legend');
+  if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
 function dismissAds() {
